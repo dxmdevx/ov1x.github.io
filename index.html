@@ -13,7 +13,6 @@
     <meta http-equiv="Expires" content="0">
     <title>oV1x Bio</title>
 
-    <!-- Favicon SVG Inline -->
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23bf953f'/%3E%3Cstop offset='50%25' style='stop-color:%23fcf6ba'/%3E%3Cstop offset='100%25' style='stop-color:%23b38728'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ccircle cx='20' cy='32' r='10' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Cpath d='M35 22 L50 42 L42 42 L42 50 L35 50 L35 42 L28 42 Z' fill='url(%23g)'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon"
@@ -37,6 +36,11 @@
             --danger: #ff4757;
             --success: #23a55a;
             --depth-shadow: 0 60px 100px rgba(0, 0, 0, 1), 0 30px 60px rgba(0, 0, 0, 0.8);
+
+            /* Smooth Timing */
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         * {
@@ -83,7 +87,118 @@
             border-radius: 10px;
         }
 
-        /* 3D Scene Container */
+        /* ==================== ANIMATIONS ==================== */
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px) translateZ(var(--tz, 0px));
+            }
+
+            50% {
+                transform: translateY(-8px) translateZ(var(--tz, 0px));
+            }
+        }
+
+        @keyframes floatHorizontal {
+
+            0%,
+            100% {
+                transform: translateX(0px);
+            }
+
+            50% {
+                transform: translateX(4px);
+            }
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.03);
+                opacity: 1;
+            }
+        }
+
+        @keyframes gentlePulse {
+
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes rotateSlow {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes statusPulse {
+
+            0%,
+            100% {
+                transform: translateZ(15px) scale(1);
+            }
+
+            50% {
+                transform: translateZ(15px) scale(1.1);
+            }
+        }
+
+        @keyframes avatarRing {
+            100% {
+                transform: translateZ(-5px) rotate(360deg);
+            }
+        }
+
+        @keyframes bubbleIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px) scale(0.95) translateZ(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) translateZ(40px);
+            }
+        }
+
+        /* ==================== SCENE CONTAINER ==================== */
+
         .scene-container {
             position: relative;
             z-index: 10;
@@ -93,14 +208,15 @@
             perspective-origin: 50% 50%;
         }
 
-        /* 3D Wrapper with multiple layers */
         .wrapper-3d {
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
+            transition: filter 0.1s linear;
+            will-change: transform, filter;
         }
 
-        /* Floating Platform Base */
+        /* ==================== PLATFORM & SIDES ==================== */
+
         .platform-base {
             position: absolute;
             width: 100%;
@@ -110,9 +226,9 @@
             border-radius: 40px;
             filter: blur(30px);
             pointer-events: none;
+            animation: gentlePulse 4s ease-in-out infinite;
         }
 
-        /* Platform Shadow Layer */
         .platform-shadow {
             position: absolute;
             width: 90%;
@@ -124,9 +240,11 @@
             border-radius: 50%;
             filter: blur(20px);
             pointer-events: none;
+            animation: breathe 3s ease-in-out infinite;
         }
 
-        /* 3D Card with depth layers */
+        /* ==================== CARD BASE ==================== */
+
         .card {
             position: relative;
             width: 100%;
@@ -137,10 +255,10 @@
             backdrop-filter: blur(40px);
             transform-style: preserve-3d;
             transform: translateZ(0);
-            transition: box-shadow 0.3s ease;
+            transition: box-shadow 0.3s ease, opacity 0.5s ease, visibility 0.5s ease;
+            will-change: transform, box-shadow;
         }
 
-        /* Card Depth Layers (3D Extrusion Effect) */
         .card::before {
             content: '';
             position: absolute;
@@ -154,7 +272,6 @@
             z-index: 100;
         }
 
-        /* Card Side Extrusion */
         .card-sides {
             position: absolute;
             inset: 0;
@@ -198,13 +315,72 @@
             border-radius: 0 0 10px 10px;
         }
 
-        /* Floating elements with different depths */
         .float-layer {
             transform-style: preserve-3d;
             position: relative;
         }
 
-        /* Banner with enhanced 3D */
+        .light-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 30px;
+            background: radial-gradient(circle at var(--light-x, 50%) var(--light-y, 20%),
+                    rgba(255, 255, 255, 0.15) 0%,
+                    transparent 50%);
+            pointer-events: none;
+            z-index: 50;
+            transition: background 0.2s ease;
+        }
+
+        /* ==================== NAVIGATION (Inside Card) ==================== */
+
+        .nav-tab-single {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 200;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.4s var(--ease-elastic);
+            background: linear-gradient(135deg, rgba(191, 149, 63, 0.15) 0%, rgba(191, 149, 63, 0.05) 100%);
+            color: var(--accent);
+            border: 1px solid rgba(191, 149, 63, 0.3);
+            backdrop-filter: blur(20px);
+            transform: translateZ(90px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-tab-single:hover {
+            background: linear-gradient(135deg, var(--accent) 0%, #a67c2e 100%);
+            color: #000;
+            transform: translateZ(100px) scale(1.08);
+            box-shadow: 0 12px 35px rgba(191, 149, 63, 0.4);
+        }
+
+        .nav-tab-single:active {
+            transform: translateZ(90px) scale(0.98);
+        }
+
+        /* ==================== PAGE CONTAINER ==================== */
+
+        .page-container {
+            display: none;
+        }
+
+        .page-container.active {
+            display: block;
+        }
+
+        /* ==================== BANNER ==================== */
+
         .banner {
             height: 150px;
             width: 100%;
@@ -238,7 +414,8 @@
             pointer-events: none;
         }
 
-        /* Content with maximum float */
+        /* ==================== CONTENT ==================== */
+
         .content {
             padding: 0 22px 28px;
             margin-top: -60px;
@@ -247,15 +424,17 @@
             z-index: 10;
         }
 
-        /* Avatar floating high */
+        /* ==================== AVATAR ==================== */
+
         .avatar-box {
             position: relative;
             display: inline-block;
             transform: translateZ(80px);
             transform-style: preserve-3d;
+            animation: float 4s ease-in-out infinite;
+            --tz: 80px;
         }
 
-        /* Avatar Ring Glow */
         .avatar-glow {
             position: absolute;
             inset: -20px;
@@ -263,21 +442,7 @@
             background: radial-gradient(circle, rgba(191, 149, 63, 0.3) 0%, transparent 70%);
             filter: blur(15px);
             transform: translateZ(-20px);
-            animation: glowPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes glowPulse {
-
-            0%,
-            100% {
-                opacity: 0.5;
-                transform: translateZ(-20px) scale(1);
-            }
-
-            50% {
-                opacity: 1;
-                transform: translateZ(-20px) scale(1.1);
-            }
+            animation: gentlePulse 3s ease-in-out infinite;
         }
 
         .avatar {
@@ -294,9 +459,16 @@
                 inset 0 -10px 20px rgba(0, 0, 0, 0.3),
                 inset 0 10px 20px rgba(255, 255, 255, 0.05);
             transform-style: preserve-3d;
+            transition: transform 0.5s var(--ease-elastic), box-shadow 0.5s var(--ease-smooth);
         }
 
-        /* Avatar 3D Ring */
+        .avatar:hover {
+            transform: scale(1.05);
+            box-shadow:
+                0 25px 50px rgba(0, 0, 0, 0.7),
+                0 0 80px rgba(191, 149, 63, 0.3);
+        }
+
         .avatar::before {
             content: '';
             position: absolute;
@@ -305,12 +477,6 @@
             background: conic-gradient(from 0deg, transparent, var(--accent), transparent 30%);
             animation: avatarRing 3s linear infinite;
             transform: translateZ(-5px);
-        }
-
-        @keyframes avatarRing {
-            100% {
-                transform: translateZ(-5px) rotate(360deg);
-            }
         }
 
         .avatar-inner {
@@ -337,19 +503,8 @@
             transform: translateZ(15px);
         }
 
-        @keyframes statusPulse {
+        /* ==================== BUBBLE ==================== */
 
-            0%,
-            100% {
-                transform: translateZ(15px) scale(1);
-            }
-
-            50% {
-                transform: translateZ(15px) scale(1.1);
-            }
-        }
-
-        /* Status Bubble with depth */
         .bubble {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
             border: 1px solid var(--border);
@@ -367,20 +522,10 @@
             box-shadow:
                 0 15px 35px rgba(0, 0, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            animation: bubbleIn 0.4s ease;
+            animation: bubbleIn 0.6s var(--ease-elastic), float 3.5s ease-in-out infinite;
+            animation-delay: 0s, 0.6s;
             transform: translateZ(40px);
-        }
-
-        @keyframes bubbleIn {
-            from {
-                opacity: 0;
-                transform: translateY(-5px) scale(0.95) translateZ(40px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1) translateZ(40px);
-            }
+            --tz: 40px;
         }
 
         .bubble img {
@@ -399,7 +544,8 @@
             text-overflow: ellipsis;
         }
 
-        /* Spotify Container floating */
+        /* ==================== SPOTIFY ==================== */
+
         #spotify-container {
             margin-top: 16px;
             background: rgba(30, 215, 96, 0.08);
@@ -413,6 +559,17 @@
             box-shadow:
                 0 15px 35px rgba(0, 0, 0, 0.4),
                 0 0 30px rgba(30, 215, 96, 0.1);
+            animation: float 4s ease-in-out infinite;
+            animation-delay: 0.3s;
+            --tz: 35px;
+            transition: all 0.4s var(--ease-smooth);
+        }
+
+        #spotify-container:hover {
+            transform: translateZ(45px) scale(1.02);
+            box-shadow:
+                0 20px 45px rgba(0, 0, 0, 0.5),
+                0 0 40px rgba(30, 215, 96, 0.2);
         }
 
         .spot-art {
@@ -420,6 +577,7 @@
             height: 45px;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            animation: breathe 3s ease-in-out infinite;
         }
 
         .spot-details {
@@ -458,7 +616,8 @@
             transition: width 1s linear;
         }
 
-        /* Activity containers with depth */
+        /* ==================== ACTIVITY ==================== */
+
         .activity-container {
             margin-top: 12px;
             border-radius: 14px;
@@ -469,6 +628,13 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             transform: translateZ(30px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            animation: float 4.2s ease-in-out infinite;
+            transition: all 0.4s var(--ease-smooth);
+            --tz: 30px;
+        }
+
+        .activity-container:hover {
+            transform: translateZ(40px) scale(1.02);
         }
 
         .activity-icon {
@@ -478,6 +644,7 @@
             background-size: cover;
             background-position: center;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            animation: breathe 2.5s ease-in-out infinite;
         }
 
         .activity-details {
@@ -497,9 +664,13 @@
             margin-top: 2px;
         }
 
-        /* User meta with depth */
+        /* ==================== USER META ==================== */
+
         .user-meta {
             transform: translateZ(45px);
+            animation: float 5s ease-in-out infinite;
+            animation-delay: 0.5s;
+            --tz: 45px;
         }
 
         .user-meta h1 {
@@ -519,7 +690,8 @@
             margin-bottom: 14px;
         }
 
-        /* Badges floating */
+        /* ==================== BADGES ==================== */
+
         .badges-container {
             display: flex;
             gap: 8px;
@@ -539,15 +711,35 @@
             text-transform: uppercase;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             transform: translateZ(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.4s var(--ease-elastic);
+            animation: float 4.5s ease-in-out infinite;
+            cursor: default;
+        }
+
+        .badge:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .badge:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .badge:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .badge:nth-child(4) {
+            animation-delay: 0.6s;
         }
 
         .badge:hover {
-            transform: translateZ(20px);
-            box-shadow: 0 10px 25px rgba(191, 149, 63, 0.2);
+            transform: translateZ(20px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(191, 149, 63, 0.3);
+            background: rgba(191, 149, 63, 0.2);
         }
 
-        /* Repository section with depth */
+        /* ==================== REPO ==================== */
+
         .repo {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 18px;
@@ -560,6 +752,9 @@
             box-shadow:
                 0 20px 40px rgba(0, 0, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: float 5.5s ease-in-out infinite;
+            animation-delay: 0.8s;
+            --tz: 20px;
         }
 
         .repo-item {
@@ -608,20 +803,23 @@
             border-radius: 6px;
             font-size: 10px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.3s var(--ease-elastic);
             white-space: nowrap;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+            display: inline-block;
+            cursor: default;
         }
 
         .tool-tag:hover {
-            background: rgba(191, 149, 63, 0.15);
-            border-color: rgba(191, 149, 63, 0.4);
+            background: rgba(191, 149, 63, 0.2);
+            border-color: rgba(191, 149, 63, 0.5);
             color: #fff;
-            transform: translateY(-2px) translateZ(5px);
-            box-shadow: 0 8px 20px rgba(191, 149, 63, 0.2);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(191, 149, 63, 0.25);
         }
 
-        /* Button floating high */
+        /* ==================== BUTTON ==================== */
+
         .btn {
             display: block;
             width: 100%;
@@ -632,25 +830,314 @@
             border-radius: 16px;
             font-weight: 800;
             text-decoration: none;
-            transition: 0.4s ease;
+            transition: all 0.5s var(--ease-elastic);
             font-size: 13px;
             transform: translateZ(50px);
             box-shadow:
                 0 20px 40px rgba(0, 0, 0, 0.4),
                 0 0 30px rgba(255, 255, 255, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            animation: float 6s ease-in-out infinite;
+            animation-delay: 1s;
+            --tz: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.3),
+                    transparent);
+            animation: shimmer 3s ease-in-out infinite;
         }
 
         .btn:hover {
             background: linear-gradient(135deg, var(--accent) 0%, #a67c2e 100%);
             color: #fff;
-            transform: translateY(-5px) translateZ(60px);
+            transform: translateY(-5px) translateZ(60px) scale(1.02);
             box-shadow:
-                0 30px 50px rgba(191, 149, 63, 0.3),
-                0 0 50px rgba(191, 149, 63, 0.2);
+                0 30px 50px rgba(191, 149, 63, 0.4),
+                0 0 60px rgba(191, 149, 63, 0.3);
         }
 
-        /* Security Modal */
+        /* ==================== PORTFOLIO PAGE ==================== */
+
+        .portfolio-content {
+            padding: 30px 22px;
+        }
+
+        .portfolio-header {
+            text-align: center;
+            margin-bottom: 25px;
+            transform: translateZ(40px);
+        }
+
+        .portfolio-header h2 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent) 0%, #fcf6ba 50%, #b38728 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .portfolio-header p {
+            color: var(--text-dim);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Flip Cards Grid */
+        .flip-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            transform: translateZ(30px);
+        }
+
+        /* Flip Card */
+        .flip-card {
+            perspective: 1500px;
+            height: 180px;
+            cursor: pointer;
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .flip-card:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .flip-card:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .flip-card:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        .flip-card:nth-child(4) {
+            animation-delay: 0.9s;
+        }
+
+        .flip-card:nth-child(5) {
+            animation-delay: 1.2s;
+        }
+
+        .flip-card:nth-child(6) {
+            animation-delay: 1.5s;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s var(--ease-smooth);
+        }
+
+        .flip-card:hover .flip-card-inner {
+            transform: scale(1.02);
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.5s var(--ease-smooth);
+        }
+
+        .flip-card-front {
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .flip-card-front::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(191, 149, 63, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .flip-card-front:hover {
+            box-shadow:
+                0 20px 45px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(191, 149, 63, 0.15);
+            border-color: rgba(191, 149, 63, 0.3);
+        }
+
+        .flip-card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 24px;
+            background: linear-gradient(135deg, rgba(191, 149, 63, 0.2) 0%, rgba(191, 149, 63, 0.05) 100%);
+            border: 1px solid rgba(191, 149, 63, 0.3);
+            transition: all 0.4s var(--ease-elastic);
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        .flip-card:hover .flip-card-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 10px 25px rgba(191, 149, 63, 0.3);
+        }
+
+        .flip-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .flip-card-subtitle {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .flip-card-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: rgba(191, 149, 63, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .flip-card-hint svg {
+            width: 12px;
+            height: 12px;
+            animation: rotateSlow 2s linear infinite;
+        }
+
+        /* BACK CARD - FIXED READABILITY */
+        .flip-card-back {
+            background: linear-gradient(145deg, #0f0f0f 0%, #1a1a1a 50%, #0d0d0d 100%);
+            transform: rotateY(180deg);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .flip-card-back::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(191, 149, 63, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .flip-card-back-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-shadow: 0 0 20px rgba(191, 149, 63, 0.5);
+        }
+
+        .flip-card-back-title::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .flip-card-back-content {
+            font-size: 12px;
+            color: #e0e0e0;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .flip-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 14px;
+        }
+
+        .flip-tag {
+            background: rgba(191, 149, 63, 0.2);
+            border: 1px solid rgba(191, 149, 63, 0.4);
+            color: #f0d890;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s var(--ease-elastic);
+            animation: floatHorizontal 3s ease-in-out infinite;
+        }
+
+        .flip-tag:nth-child(odd) {
+            animation-direction: normal;
+        }
+
+        .flip-tag:nth-child(even) {
+            animation-direction: reverse;
+        }
+
+        /* Portfolio Footer */
+        .portfolio-footer {
+            margin-top: 20px;
+            text-align: center;
+            transform: translateZ(20px);
+        }
+
+        .portfolio-footer p {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+        }
+
+        /* ==================== SECURITY MODAL ==================== */
+
         #security-modal {
             position: fixed;
             inset: 0;
@@ -724,7 +1211,8 @@
             transform: scale(1.05);
         }
 
-        /* Loading Screen */
+        /* ==================== LOADING SCREEN ==================== */
+
         #loading-screen {
             position: fixed;
             inset: 0;
@@ -752,31 +1240,11 @@
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 3px;
+            animation: gentlePulse 2s ease-in-out infinite;
         }
 
-        @keyframes spin {
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        /* ==================== RESPONSIVE ==================== */
 
-        /* Dynamic Light Effect */
-        .light-effect {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 30px;
-            background: radial-gradient(circle at var(--light-x, 50%) var(--light-y, 20%),
-                    rgba(255, 255, 255, 0.15) 0%,
-                    transparent 50%);
-            pointer-events: none;
-            z-index: 50;
-            transition: background 0.2s ease;
-        }
-
-        /* Responsive */
         @media (max-width: 480px) {
             .scene-container {
                 padding: 12px;
@@ -803,6 +1271,54 @@
             .banner {
                 height: 130px;
             }
+
+            .nav-tab-single {
+                padding: 8px 14px;
+                font-size: 10px;
+                top: 12px;
+                right: 12px;
+            }
+
+            .flip-cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .flip-card {
+                height: 160px;
+            }
+
+            /* Adjust Z-depth for mobile performance */
+            .avatar-box {
+                --tz: 60px;
+            }
+
+            .user-meta {
+                --tz: 35px;
+            }
+
+            .badges-container {
+                --tz: 20px;
+            }
+
+            .bubble {
+                --tz: 30px;
+            }
+
+            #spotify-container {
+                --tz: 25px;
+            }
+
+            .activity-container {
+                --tz: 20px;
+            }
+
+            .repo {
+                --tz: 15px;
+            }
+
+            .btn {
+                --tz: 40px;
+            }
         }
 
         @media print {
@@ -823,7 +1339,7 @@
     <canvas id="canvas-bg"></canvas>
 
     <div id="security-modal">
-        <div class="alert-icon">⚠️</div>
+        <div class="alert-icon">⚠</div>
         <div class="alert-sub">Security Breach Detected</div>
         <div class="alert-h">SYSTEM PROTECTED</div>
         <div class="alert-p">oV1x's repository is shielded by an encrypted firewall. Unauthorized access has been logged
@@ -836,165 +1352,422 @@
 
     <div class="scene-container">
         <div class="wrapper-3d" id="wrapper-3d">
-            <!-- Platform Base (Background Glow) -->
+            <!-- Platform Base -->
             <div class="platform-base"></div>
 
             <!-- Platform Shadow -->
             <div class="platform-shadow"></div>
 
-            <!-- Main Card -->
-            <div class="card float-layer" id="main-card">
-                <!-- Dynamic Light Effect -->
-                <div class="light-effect" id="light-effect"></div>
+            <!-- Bio Page -->
+            <div class="page-container active" id="bio-page">
+                <div class="card float-layer" id="main-card">
+                    <div class="light-effect" id="light-effect"></div>
 
-                <!-- Card 3D Sides -->
-                <div class="card-sides">
-                    <div class="card-side card-side-left"></div>
-                    <div class="card-side card-side-right"></div>
-                    <div class="card-side card-side-bottom"></div>
+                    <!-- Navigation Button (Inside Card - Top Right) -->
+                    <button class="nav-tab-single" id="nav-switch" data-target="portfolio">Portfolio</button>
+
+                    <div class="card-sides">
+                        <div class="card-side card-side-left"></div>
+                        <div class="card-side card-side-right"></div>
+                        <div class="card-side card-side-bottom"></div>
+                    </div>
+
+                    <div class="banner" id="user-banner">
+                        <div class="banner-accent"></div>
+                    </div>
+
+                    <div class="content">
+                        <div class="avatar-box">
+                            <div class="avatar-glow"></div>
+                            <div class="avatar">
+                                <div class="avatar-inner" id="avatar-inner"></div>
+                            </div>
+                            <div class="status-dot" id="status-dot"></div>
+                        </div>
+
+                        <div class="bubble" id="status-bubble"></div>
+
+                        <div id="spotify-container">
+                            <img src="" class="spot-art" id="spot-art">
+                            <div class="spot-details">
+                                <div class="spot-track" id="spot-track">Loading...</div>
+                                <div class="spot-artist" id="spot-artist">Artist</div>
+                                <div class="spot-progress">
+                                    <div class="spot-progress-bar" id="spot-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-container" id="vscode-container" style="background: rgba(0,122,204,0.1);">
+                            <div class="activity-icon" id="vscode-icon"></div>
+                            <div class="activity-details">
+                                <div class="activity-name" style="color: var(--vscode);">Visual Studio Code</div>
+                                <div class="activity-detail" id="vscode-detail">Coding...</div>
+                            </div>
+                        </div>
+
+                        <div class="activity-container" id="gaming-container" style="background: rgba(145,71,255,0.1);">
+                            <div class="activity-icon" id="game-icon"></div>
+                            <div class="activity-details">
+                                <div class="activity-name" style="color: var(--gaming);">Playing</div>
+                                <div class="activity-detail" id="game-detail">Game</div>
+                            </div>
+                        </div>
+
+                        <div class="user-meta">
+                            <h1 id="display-name">oV1x</h1>
+                            <p id="username-display">@loading...</p>
+                        </div>
+
+                        <div class="badges-container">
+                            <span class="badge">Premium</span>
+                            <span class="badge">AI Engineer</span>
+                            <span class="badge">Fullstack Dev</span>
+                            <span class="badge">Secure 2026</span>
+                        </div>
+
+                        <div class="repo">
+                            <div class="repo-item">
+                                <div class="repo-label">AI Models</div>
+                                <div class="repo-data">
+                                    <span class="tool-tag">Claude 4.6 Opus</span>
+                                    <span class="tool-tag">Claude 4.5 Sonnet</span>
+                                    <span class="tool-tag">GPT-5.3</span>
+                                    <span class="tool-tag">GPT-5.2</span>
+                                    <span class="tool-tag">o3-mini</span>
+                                    <span class="tool-tag">Gemini 3 Pro</span>
+                                    <span class="tool-tag">Gemini 2.5 Flash</span>
+                                    <span class="tool-tag">DeepSeek-V3.2</span>
+                                    <span class="tool-tag">DeepSeek R1</span>
+                                    <span class="tool-tag">GLM-5</span>
+                                    <span class="tool-tag">Llama 4 Maverick</span>
+                                    <span class="tool-tag">Qwen 3.5 Coder</span>
+                                    <span class="tool-tag">Mistral Large 3</span>
+                                    <span class="tool-tag">Grok 4.1</span>
+                                    <span class="tool-tag">Kimi K3</span>
+                                    <span class="tool-tag">Phi-4-mini-flash</span>
+                                    <span class="tool-tag">StarCoder 3</span>
+                                </div>
+                            </div>
+                            <div class="repo-item">
+                                <div class="repo-label">AI-Native IDEs</div>
+                                <div class="repo-data">
+                                    <span class="tool-tag">Cursor</span>
+                                    <span class="tool-tag">Windsurf</span>
+                                    <span class="tool-tag">Trae</span>
+                                    <span class="tool-tag">Zed AI</span>
+                                    <span class="tool-tag">PearAI</span>
+                                    <span class="tool-tag">JetBrains Junie</span>
+                                    <span class="tool-tag">Copilot Workspace</span>
+                                </div>
+                            </div>
+                            <div class="repo-item">
+                                <div class="repo-label">Autonomous Agents</div>
+                                <div class="repo-data">
+                                    <span class="tool-tag">Devin 3.0</span>
+                                    <span class="tool-tag">Manus</span>
+                                    <span class="tool-tag">OpenHands</span>
+                                    <span class="tool-tag">Aider</span>
+                                    <span class="tool-tag">Claude Code</span>
+                                    <span class="tool-tag">Cline</span>
+                                    <span class="tool-tag">RooCode</span>
+                                    <span class="tool-tag">PydanticAI</span>
+                                </div>
+                            </div>
+                            <div class="repo-item">
+                                <div class="repo-label">Web & Prototyping</div>
+                                <div class="repo-data">
+                                    <span class="tool-tag">Bolt.new</span>
+                                    <span class="tool-tag">Lovable</span>
+                                    <span class="tool-tag">v0.dev</span>
+                                    <span class="tool-tag">Replit Agent</span>
+                                    <span class="tool-tag">Create.xyz</span>
+                                    <span class="tool-tag">FlutterFlow</span>
+                                </div>
+                            </div>
+                            <div class="repo-item">
+                                <div class="repo-label">Extensions & Tools</div>
+                                <div class="repo-data">
+                                    <span class="tool-tag">Copilot X2</span>
+                                    <span class="tool-tag">Supermaven</span>
+                                    <span class="tool-tag">Continue.dev</span>
+                                    <span class="tool-tag">Cody</span>
+                                    <span class="tool-tag">Tabnine</span>
+                                    <span class="tool-tag">Qodo</span>
+                                    <span class="tool-tag">Amazon Q</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="https://discord.com/users/1045863666412687380" target="_blank" class="btn">DM ON
+                            DISCORD</a>
+                    </div>
                 </div>
+            </div>
 
-                <div class="banner" id="user-banner">
-                    <div class="banner-accent"></div>
-                </div>
+            <!-- Portfolio Page -->
+            <div class="page-container" id="portfolio-page">
+                <div class="card float-layer" id="portfolio-card">
+                    <div class="light-effect" id="light-effect-portfolio"></div>
 
-                <div class="content">
-                    <div class="avatar-box">
-                        <div class="avatar-glow"></div>
-                        <div class="avatar">
-                            <div class="avatar-inner" id="avatar-inner"></div>
-                        </div>
-                        <div class="status-dot" id="status-dot"></div>
+                    <!-- Navigation Button (Inside Card - Top Right) -->
+                    <button class="nav-tab-single" id="nav-switch-portfolio" data-target="bio">Bio</button>
+
+                    <div class="card-sides">
+                        <div class="card-side card-side-left"></div>
+                        <div class="card-side card-side-right"></div>
+                        <div class="card-side card-side-bottom"></div>
                     </div>
 
-                    <!-- Status Bubble -->
-                    <div class="bubble" id="status-bubble"></div>
+                    <div class="portfolio-content">
+                        <div class="portfolio-header">
+                            <h2>My Portfolio</h2>
+                            <p>Click cards to flip</p>
+                        </div>
 
-                    <div id="spotify-container">
-                        <img src="" class="spot-art" id="spot-art">
-                        <div class="spot-details">
-                            <div class="spot-track" id="spot-track">Loading...</div>
-                            <div class="spot-artist" id="spot-artist">Artist</div>
-                            <div class="spot-progress">
-                                <div class="spot-progress-bar" id="spot-progress"></div>
+                        <div class="flip-cards-grid">
+                            <!-- Card 1: About Me -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">About Me</div>
+                                        <div class="flip-card-subtitle">Who I am</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">About Me</div>
+                                        <div class="flip-card-back-content">
+                                            Full-stack developer from Thailand. Passionate about AI, clean code, and
+                                            building innovative solutions. Always learning new technologies.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">Developer</span>
+                                            <span class="flip-tag">AI Enthusiast</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Skills -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <polyline points="16 18 22 12 16 6"></polyline>
+                                                <polyline points="8 6 2 12 8 18"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">Skills</div>
+                                        <div class="flip-card-subtitle">Tech stack</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">Skills</div>
+                                        <div class="flip-card-back-content">
+                                            TypeScript, Python, Node.js, React, Next.js, Three.js, PostgreSQL, MongoDB,
+                                            Docker, AWS, GCP.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">Front</span>
+                                            <span class="flip-tag">Back</span>
+                                            <span class="flip-tag">Cloud</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Experience -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">Experience</div>
+                                        <div class="flip-card-subtitle">Work history</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">Experience</div>
+                                        <div class="flip-card-back-content">
+                                            5+ years building web apps. Worked with startups and enterprises. Shipped
+                                            50+ projects. AI integration specialist.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">5+ Years</span>
+                                            <span class="flip-tag">50+ Projects</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Projects -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path
+                                                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">Projects</div>
+                                        <div class="flip-card-subtitle">Featured work</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">Projects</div>
+                                        <div class="flip-card-back-content">
+                                            AI chatbots, automation tools, SaaS platforms, mobile apps, browser
+                                            extensions, and more. All built with modern tech.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">SaaS</span>
+                                            <span class="flip-tag">AI Tools</span>
+                                            <span class="flip-tag">Mobile</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 5: AI Focus -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                                <path d="M12 1v4"></path>
+                                                <path d="M12 19v4"></path>
+                                                <path d="M1 12h4"></path>
+                                                <path d="M19 12h4"></path>
+                                                <path d="M4.22 4.22l2.83 2.83"></path>
+                                                <path d="M16.95 16.95l2.83 2.83"></path>
+                                                <path d="M4.22 19.78l2.83-2.83"></path>
+                                                <path d="M16.95 7.05l2.83-2.83"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">AI Focus</div>
+                                        <div class="flip-card-subtitle">Intelligence</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">AI Focus</div>
+                                        <div class="flip-card-back-content">
+                                            Building AI-powered applications. LLM integration, prompt engineering, RAG
+                                            systems, fine-tuning models for specific use cases.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">LLM</span>
+                                            <span class="flip-tag">RAG</span>
+                                            <span class="flip-tag">Prompts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 6: Contact -->
+                            <div class="flip-card">
+                                <div class="flip-card-inner">
+                                    <div class="flip-card-front">
+                                        <div class="flip-card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path
+                                                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                                </path>
+                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                            </svg>
+                                        </div>
+                                        <div class="flip-card-title">Contact</div>
+                                        <div class="flip-card-subtitle">Reach me</div>
+                                        <div class="flip-card-hint">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4"></path>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <path d="M7 23l-4-4 4-4"></path>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            Click to flip
+                                        </div>
+                                    </div>
+                                    <div class="flip-card-back">
+                                        <div class="flip-card-back-title">Contact</div>
+                                        <div class="flip-card-back-content">
+                                            Open for collaborations and interesting projects. DM me on Discord for quick
+                                            response. Let's build something amazing together.
+                                        </div>
+                                        <div class="flip-card-tags">
+                                            <span class="flip-tag">Discord</span>
+                                            <span class="flip-tag">Open to Work</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="activity-container" id="vscode-container" style="background: rgba(0,122,204,0.1);">
-                        <div class="activity-icon" id="vscode-icon"></div>
-                        <div class="activity-details">
-                            <div class="activity-name" style="color: var(--vscode);">Visual Studio Code</div>
-                            <div class="activity-detail" id="vscode-detail">Coding...</div>
+                        <div class="portfolio-footer">
+                            <p>Built with passion and modern tech</p>
+                            <a href="https://discord.com/users/1045863666412687380" target="_blank" class="btn">GET IN
+                                TOUCH</a>
                         </div>
                     </div>
-
-                    <div class="activity-container" id="gaming-container" style="background: rgba(145,71,255,0.1);">
-                        <div class="activity-icon" id="game-icon"></div>
-                        <div class="activity-details">
-                            <div class="activity-name" style="color: var(--gaming);">Playing</div>
-                            <div class="activity-detail" id="game-detail">Game</div>
-                        </div>
-                    </div>
-
-                    <div class="user-meta">
-                        <h1 id="display-name">oV1x</h1>
-                        <p id="username-display">@loading...</p>
-                    </div>
-
-                    <div class="badges-container">
-                        <span class="badge">Premium</span>
-                        <span class="badge">AI Engineer</span>
-                        <span class="badge">Fullstack Dev</span>
-                        <span class="badge">Secure 2026</span>
-                    </div>
-
-                    <div class="repo">
-                        <div class="repo-item">
-                            <div class="repo-label">AI Models</div>
-                            <div class="repo-data">
-                                <span class="tool-tag">Claude 4.6 Opus</span>
-                                <span class="tool-tag">Claude 4.5 Sonnet</span>
-                                <span class="tool-tag">GPT-5.3</span>
-                                <span class="tool-tag">GPT-5.2</span>
-                                <span class="tool-tag">o3-mini</span>
-                                <span class="tool-tag">Gemini 3 Pro</span>
-                                <span class="tool-tag">Gemini 2.5 Flash</span>
-                                <span class="tool-tag">DeepSeek-V3.2</span>
-                                <span class="tool-tag">DeepSeek R1</span>
-                                <span class="tool-tag">GLM-5</span>
-                                <span class="tool-tag">GLM-4.5</span>
-                                <span class="tool-tag">Llama 4 Maverick</span>
-                                <span class="tool-tag">Llama 4 Scout</span>
-                                <span class="tool-tag">Qwen 3.5 Coder</span>
-                                <span class="tool-tag">Mistral Large 3</span>
-                                <span class="tool-tag">Codestral 2</span>
-                                <span class="tool-tag">Grok 4.1</span>
-                                <span class="tool-tag">Grok 3</span>
-                                <span class="tool-tag">Kimi K3</span>
-                                <span class="tool-tag">Kimi K2 Thinking</span>
-                                <span class="tool-tag">Phi-4-mini-flash</span>
-                                <span class="tool-tag">StarCoder 3</span>
-                            </div>
-                        </div>
-                        <div class="repo-item">
-                            <div class="repo-label">AI-Native IDEs</div>
-                            <div class="repo-data">
-                                <span class="tool-tag">Cursor</span>
-                                <span class="tool-tag">Windsurf</span>
-                                <span class="tool-tag">Trae</span>
-                                <span class="tool-tag">Zed AI</span>
-                                <span class="tool-tag">PearAI</span>
-                                <span class="tool-tag">Pony IDE</span>
-                                <span class="tool-tag">JetBrains Junie</span>
-                                <span class="tool-tag">Google Antigravity</span>
-                                <span class="tool-tag">Copilot Workspace</span>
-                            </div>
-                        </div>
-                        <div class="repo-item">
-                            <div class="repo-label">Autonomous Agents</div>
-                            <div class="repo-data">
-                                <span class="tool-tag">Devin 3.0</span>
-                                <span class="tool-tag">Manus</span>
-                                <span class="tool-tag">OpenHands</span>
-                                <span class="tool-tag">Aider</span>
-                                <span class="tool-tag">Claude Code</span>
-                                <span class="tool-tag">Cline</span>
-                                <span class="tool-tag">RooCode</span>
-                                <span class="tool-tag">Mely</span>
-                                <span class="tool-tag">PydanticAI</span>
-                            </div>
-                        </div>
-                        <div class="repo-item">
-                            <div class="repo-label">Web & Prototyping</div>
-                            <div class="repo-data">
-                                <span class="tool-tag">Bolt.new</span>
-                                <span class="tool-tag">Lovable</span>
-                                <span class="tool-tag">v0.dev</span>
-                                <span class="tool-tag">Replit Agent</span>
-                                <span class="tool-tag">Create.xyz</span>
-                                <span class="tool-tag">Softr AI</span>
-                                <span class="tool-tag">FlutterFlow</span>
-                            </div>
-                        </div>
-                        <div class="repo-item">
-                            <div class="repo-label">Extensions & Tools</div>
-                            <div class="repo-data">
-                                <span class="tool-tag">Copilot X2</span>
-                                <span class="tool-tag">Supermaven</span>
-                                <span class="tool-tag">Continue.dev</span>
-                                <span class="tool-tag">Cody</span>
-                                <span class="tool-tag">Tabnine</span>
-                                <span class="tool-tag">Qodo</span>
-                                <span class="tool-tag">Snyk Code</span>
-                                <span class="tool-tag">Amazon Q</span>
-                                <span class="tool-tag">Bito</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="https://discord.com/users/1045863666412687380" target="_blank" class="btn">DM ON
-                        DISCORD</a>
                 </div>
             </div>
         </div>
@@ -1005,15 +1778,14 @@
 
         const DISCORD_ID = "1045863666412687380";
 
-        // ========== [TITLE ANIMATION LOOP] ==========
+        // Title Animation
         const TitleAnimator = {
             titles: [
                 "oV1x Bio",
                 "oV1x | Online",
                 "oV1x | Coding...",
                 "oV1x | AI Engineer",
-                "oV1x | Fullstack Dev",
-                "oV1x Bio"
+                "oV1x | Fullstack Dev"
             ],
             currentIndex: 0,
             currentText: "",
@@ -1032,21 +1804,18 @@
                 const currentTitle = this.titles[this.currentIndex];
 
                 if (!this.isTyping && !this.isDeleting) {
-                    // Start typing
                     this.isTyping = true;
                     this.charIndex = 0;
                     this.currentText = "";
                 }
 
                 if (this.isTyping) {
-                    // Typing effect
                     if (this.charIndex < currentTitle.length) {
                         this.currentText += currentTitle.charAt(this.charIndex);
                         this.charIndex++;
                         document.title = this.currentText;
                         setTimeout(() => this.animate(), this.typeSpeed);
                     } else {
-                        // Finished typing, wait then start deleting
                         this.isTyping = false;
                         setTimeout(() => {
                             this.isDeleting = true;
@@ -1054,14 +1823,12 @@
                         }, this.pauseTime);
                     }
                 } else if (this.isDeleting) {
-                    // Deleting effect
                     if (this.charIndex > 0) {
                         this.currentText = this.currentText.slice(0, -1);
                         this.charIndex--;
                         document.title = this.currentText;
                         setTimeout(() => this.animate(), this.deleteSpeed);
                     } else {
-                        // Finished deleting, move to next title
                         this.isDeleting = false;
                         this.currentIndex = (this.currentIndex + 1) % this.titles.length;
                         setTimeout(() => this.animate(), 300);
@@ -1070,13 +1837,14 @@
             }
         };
 
-        // ========== [FAVICON ANIMATION - Dynamic Favicon] ==========
+        // Favicon Animation
         const FaviconAnimator = {
             frame: 0,
             rotationAngle: 0,
+            canvas: null,
+            ctx: null,
 
             init() {
-                // Create animated favicon using canvas
                 this.canvas = document.createElement('canvas');
                 this.canvas.width = 64;
                 this.canvas.height = 64;
@@ -1089,16 +1857,13 @@
                 const cx = 32;
                 const cy = 32;
 
-                // Clear canvas
                 ctx.clearRect(0, 0, 64, 64);
 
-                // Background with rounded corners
                 ctx.fillStyle = '#0a0a0a';
                 ctx.beginPath();
                 ctx.roundRect(0, 0, 64, 64, 14);
                 ctx.fill();
 
-                // Subtle glow effect
                 const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
                 gradient.addColorStop(0, 'rgba(191, 149, 63, 0.1)');
                 gradient.addColorStop(1, 'transparent');
@@ -1107,7 +1872,6 @@
                 ctx.arc(cx, cy, 40, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Animated ring (rotating)
                 ctx.save();
                 ctx.translate(cx - 12, cy);
                 ctx.rotate(rotation);
@@ -1118,7 +1882,6 @@
                 ctx.stroke();
                 ctx.restore();
 
-                // Static circle outline
                 ctx.save();
                 ctx.translate(cx - 12, cy);
                 ctx.strokeStyle = 'rgba(191, 149, 63, 0.3)';
@@ -1128,7 +1891,6 @@
                 ctx.stroke();
                 ctx.restore();
 
-                // V arrow shape (pointing right/up)
                 ctx.save();
                 ctx.translate(cx + 6, cy);
 
@@ -1149,14 +1911,12 @@
                 ctx.fill();
                 ctx.restore();
 
-                // Pulsing dot
                 const pulse = Math.sin(Date.now() / 500) * 0.3 + 0.7;
                 ctx.fillStyle = `rgba(191, 149, 63, ${pulse})`;
                 ctx.beginPath();
                 ctx.arc(cx + 14, cy - 12, 3, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Update favicon
                 const dataURL = this.canvas.toDataURL('image/png');
                 let link = document.querySelector("link[rel*='icon']");
                 if (link) {
@@ -1171,7 +1931,7 @@
             }
         };
 
-        // ========== [SECURITY SYSTEM] ==========
+        // Security System
         const SecuritySystem = {
             attemptCount: 0,
             sessionId: 'SECURE-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -1182,6 +1942,7 @@
                 document.getElementById('attempt-count').textContent = this.attemptCount;
                 document.getElementById('security-modal').style.display = 'flex';
                 document.getElementById('main-card').style.filter = 'blur(20px) brightness(0.4)';
+                document.getElementById('portfolio-card').style.filter = 'blur(20px) brightness(0.4)';
                 return false;
             },
 
@@ -1265,9 +2026,10 @@
         function closeSecurity() {
             document.getElementById('security-modal').style.display = 'none';
             document.getElementById('main-card').style.filter = 'none';
+            document.getElementById('portfolio-card').style.filter = 'none';
         }
 
-        // ========== [LANYARD SYNC] ==========
+        // Lanyard Sync
         async function syncSystem() {
             try {
                 const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
@@ -1402,8 +2164,8 @@
             }
         }
 
-        // ========== [THREE.JS - ENHANCED 3D SCENE] ==========
-        let scene, camera, renderer, particles, grid, floatingOrbs = [];
+        // ThreeJS Scene
+        let scene, camera, renderer, particles, grid, floatingOrbs = [], geometricShapes = [];
 
         function initThree() {
             scene = new THREE.Scene();
@@ -1417,27 +2179,26 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // Ground Grid
+            // Grid
             grid = new THREE.GridHelper(150, 60, 0xbf953f, 0x0a0a0a);
             grid.position.y = -15;
             grid.material.opacity = 0.2;
             grid.material.transparent = true;
             scene.add(grid);
 
-            // Particle System with depth
+            // Particles
             const geo = new THREE.BufferGeometry();
-            const pos = [], cols = [], sizes = [];
+            const pos = [], cols = [];
 
-            for (let i = 0; i < 2000; i++) {
+            for (let i = 0; i < 3000; i++) {
                 pos.push(
+                    THREE.MathUtils.randFloatSpread(120),
                     THREE.MathUtils.randFloatSpread(100),
-                    THREE.MathUtils.randFloatSpread(100),
-                    THREE.MathUtils.randFloatSpread(100)
+                    THREE.MathUtils.randFloatSpread(120)
                 );
 
                 const g = Math.random() > 0.85;
                 cols.push(g ? 0.75 : 1, g ? 0.58 : 1, g ? 0.25 : 1);
-                sizes.push(Math.random() * 0.5 + 0.1);
             }
 
             geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -1452,7 +2213,7 @@
             }));
             scene.add(particles);
 
-            // Floating Orbs (3D spheres)
+            // Floating Orbs
             const orbGeo = new THREE.SphereGeometry(0.5, 32, 32);
             const orbMat = new THREE.MeshBasicMaterial({
                 color: 0xbf953f,
@@ -1461,24 +2222,25 @@
                 wireframe: true
             });
 
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 12; i++) {
                 const orb = new THREE.Mesh(orbGeo, orbMat.clone());
                 orb.position.set(
-                    THREE.MathUtils.randFloatSpread(60),
-                    THREE.MathUtils.randFloatSpread(40),
-                    THREE.MathUtils.randFloatSpread(60)
+                    THREE.MathUtils.randFloatSpread(70),
+                    THREE.MathUtils.randFloatSpread(50),
+                    THREE.MathUtils.randFloatSpread(70)
                 );
                 orb.userData = {
                     speedX: (Math.random() - 0.5) * 0.02,
                     speedY: (Math.random() - 0.5) * 0.02,
                     speedZ: (Math.random() - 0.5) * 0.02,
-                    originalY: orb.position.y
+                    originalY: orb.position.y,
+                    rotSpeed: Math.random() * 0.02
                 };
                 floatingOrbs.push(orb);
                 scene.add(orb);
             }
 
-            // Ring geometry for depth effect
+            // Rings
             const ringGeo = new THREE.TorusGeometry(3, 0.02, 16, 100);
             const ringMat = new THREE.MeshBasicMaterial({
                 color: 0xbf953f,
@@ -1486,7 +2248,7 @@
                 opacity: 0.1
             });
 
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 5; i++) {
                 const ring = new THREE.Mesh(ringGeo, ringMat.clone());
                 ring.position.set(0, 0, -20 - i * 10);
                 ring.rotation.x = Math.PI / 2;
@@ -1494,6 +2256,84 @@
                 ring.userData = { rotSpeed: 0.001 + i * 0.0005 };
                 floatingOrbs.push(ring);
                 scene.add(ring);
+            }
+
+            // Icosahedrons
+            const icoGeo = new THREE.IcosahedronGeometry(0.8, 0);
+            const icoMat = new THREE.MeshBasicMaterial({
+                color: 0xbf953f,
+                transparent: true,
+                opacity: 0.12,
+                wireframe: true
+            });
+
+            for (let i = 0; i < 6; i++) {
+                const ico = new THREE.Mesh(icoGeo, icoMat.clone());
+                ico.position.set(
+                    THREE.MathUtils.randFloatSpread(80),
+                    THREE.MathUtils.randFloatSpread(60),
+                    THREE.MathUtils.randFloatSpread(80)
+                );
+                ico.userData = {
+                    rotX: (Math.random() - 0.5) * 0.01,
+                    rotY: (Math.random() - 0.5) * 0.01,
+                    floatSpeed: Math.random() * 0.005,
+                    floatOffset: Math.random() * Math.PI * 2
+                };
+                geometricShapes.push(ico);
+                scene.add(ico);
+            }
+
+            // Octahedrons
+            const octaGeo = new THREE.OctahedronGeometry(0.6, 0);
+            const octaMat = new THREE.MeshBasicMaterial({
+                color: 0xbf953f,
+                transparent: true,
+                opacity: 0.1,
+                wireframe: true
+            });
+
+            for (let i = 0; i < 8; i++) {
+                const octa = new THREE.Mesh(octaGeo, octaMat.clone());
+                octa.position.set(
+                    THREE.MathUtils.randFloatSpread(90),
+                    THREE.MathUtils.randFloatSpread(70),
+                    THREE.MathUtils.randFloatSpread(90)
+                );
+                octa.userData = {
+                    rotX: (Math.random() - 0.5) * 0.015,
+                    rotY: (Math.random() - 0.5) * 0.015,
+                    floatSpeed: Math.random() * 0.003,
+                    floatOffset: Math.random() * Math.PI * 2
+                };
+                geometricShapes.push(octa);
+                scene.add(octa);
+            }
+
+            // Tetrahedrons
+            const tetraGeo = new THREE.TetrahedronGeometry(0.5, 0);
+            const tetraMat = new THREE.MeshBasicMaterial({
+                color: 0xbf953f,
+                transparent: true,
+                opacity: 0.08,
+                wireframe: true
+            });
+
+            for (let i = 0; i < 10; i++) {
+                const tetra = new THREE.Mesh(tetraGeo, tetraMat.clone());
+                tetra.position.set(
+                    THREE.MathUtils.randFloatSpread(100),
+                    THREE.MathUtils.randFloatSpread(80),
+                    THREE.MathUtils.randFloatSpread(100)
+                );
+                tetra.userData = {
+                    rotX: (Math.random() - 0.5) * 0.02,
+                    rotY: (Math.random() - 0.5) * 0.02,
+                    floatSpeed: Math.random() * 0.004,
+                    floatOffset: Math.random() * Math.PI * 2
+                };
+                geometricShapes.push(tetra);
+                scene.add(tetra);
             }
 
             camera.position.set(0, 5, 25);
@@ -1511,30 +2351,35 @@
         function animateThree() {
             requestAnimationFrame(animateThree);
 
-            // Rotate grid
             grid.rotation.y += 0.0005;
 
-            // Rotate particles
             particles.rotation.y += 0.0002;
             particles.rotation.x += 0.0001;
 
-            // Animate floating orbs
+            const time = Date.now() * 0.001;
+
             floatingOrbs.forEach((obj, i) => {
                 if (obj.userData.speedX !== undefined) {
                     obj.position.x += obj.userData.speedX;
-                    obj.position.y = obj.userData.originalY + Math.sin(Date.now() * 0.001 + i) * 2;
+                    obj.position.y = obj.userData.originalY + Math.sin(time + i) * 2;
                     obj.position.z += obj.userData.speedZ;
+                    obj.rotation.x += obj.userData.rotSpeed;
+                    obj.rotation.y += obj.userData.rotSpeed;
 
-                    // Boundary check
                     if (Math.abs(obj.position.x) > 40) obj.userData.speedX *= -1;
                     if (Math.abs(obj.position.z) > 40) obj.userData.speedZ *= -1;
                 }
-                if (obj.userData.rotSpeed) {
+                if (obj.userData.rotSpeed !== undefined) {
                     obj.rotation.z += obj.userData.rotSpeed;
                 }
             });
 
-            // Smooth camera movement
+            geometricShapes.forEach((shape) => {
+                shape.rotation.x += shape.userData.rotX;
+                shape.rotation.y += shape.userData.rotY;
+                shape.position.y += Math.sin(time * shape.userData.floatSpeed + shape.userData.floatOffset) * 0.02;
+            });
+
             targetRotationX += (mouseY * 3 - targetRotationX) * 0.05;
             targetRotationY += (mouseX * 3 - targetRotationY) * 0.05;
 
@@ -1545,14 +2390,21 @@
             renderer.render(scene, camera);
         }
 
-        // ========== [ENHANCED 3D TILT WITH DEPTH] ==========
+        // 3D Tilt & Motion Blur
         function initTilt() {
             const wrapper = document.getElementById('wrapper-3d');
-            const card = document.getElementById('main-card');
+            const mainCard = document.getElementById('main-card');
+            const portfolioCard = document.getElementById('portfolio-card');
             const lightEffect = document.getElementById('light-effect');
+            const lightEffectPortfolio = document.getElementById('light-effect-portfolio');
 
             let currentRotateX = 0, currentRotateY = 0;
             let targetRotateX = 0, targetRotateY = 0;
+
+            // Motion Blur Variables
+            let prevRotateX = 0, prevRotateY = 0;
+            let velocityX = 0, velocityY = 0;
+            let currentBlur = 0;
 
             document.addEventListener('mousemove', e => {
                 if (window.innerWidth > 768) {
@@ -1562,53 +2414,120 @@
                     mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
                     mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
 
-                    // Calculate rotation
                     targetRotateY = (centerX - e.clientX) / 25;
                     targetRotateX = (e.clientY - centerY) / 25;
 
-                    // Update light effect position
-                    const lightX = ((e.clientX - card.getBoundingClientRect().left) / card.offsetWidth) * 100;
-                    const lightY = ((e.clientY - card.getBoundingClientRect().top) / card.offsetHeight) * 100;
+                    const activeCard = document.querySelector('.page-container.active .card');
+                    if (activeCard) {
+                        const rect = activeCard.getBoundingClientRect();
+                        const lightX = ((e.clientX - rect.left) / rect.width) * 100;
+                        const lightY = ((e.clientY - rect.top) / rect.height) * 100;
 
-                    lightEffect.style.setProperty('--light-x', `${lightX}%`);
-                    lightEffect.style.setProperty('--light-y', `${lightY}%`);
+                        if (lightEffect) lightEffect.style.setProperty('--light-x', `${Math.max(0, Math.min(100, lightX))}%`);
+                        if (lightEffect) lightEffect.style.setProperty('--light-y', `${Math.max(0, Math.min(100, lightY))}%`);
+                        if (lightEffectPortfolio) lightEffectPortfolio.style.setProperty('--light-x', `${Math.max(0, Math.min(100, lightX))}%`);
+                        if (lightEffectPortfolio) lightEffectPortfolio.style.setProperty('--light-y', `${Math.max(0, Math.min(100, lightY))}%`);
+                    }
 
-                    // Dynamic shadow based on tilt
                     const shadowX = -targetRotateY * 2;
                     const shadowY = targetRotateX * 2;
                     const shadowBlur = 60 + Math.abs(targetRotateX + targetRotateY) * 2;
 
-                    card.style.boxShadow = `
+                    const shadowStyle = `
                         ${shadowX}px ${shadowY + 30}px ${shadowBlur}px rgba(0,0,0,1),
                         ${shadowX * 0.5}px ${shadowY + 20}px ${shadowBlur * 0.7}px rgba(0,0,0,0.8),
                         0 0 100px rgba(191,149,63,0.08)
                     `;
+
+                    mainCard.style.boxShadow = shadowStyle;
+                    portfolioCard.style.boxShadow = shadowStyle;
                 }
             });
 
-            // Smooth animation loop
             function animateTilt() {
+                // Calculate velocity
+                velocityX = Math.abs(currentRotateX - prevRotateX);
+                velocityY = Math.abs(currentRotateY - prevRotateY);
+                const totalVelocity = velocityX + velocityY;
+
+                // Apply smoothing
                 currentRotateX += (targetRotateX - currentRotateX) * 0.1;
                 currentRotateY += (targetRotateY - currentRotateY) * 0.1;
 
+                // Calculate motion blur based on velocity
+                const targetBlur = Math.min(totalVelocity * 0.8, 2.5); // Cap blur at 2.5px
+                currentBlur += (targetBlur - currentBlur) * 0.2;
+
+                // Apply transform and filter
                 wrapper.style.transform = `
                     rotateX(${currentRotateX}deg) 
                     rotateY(${currentRotateY}deg)
                     translateZ(20px)
                 `;
 
+                // Apply motion blur filter
+                if (currentBlur > 0.05) {
+                    wrapper.style.filter = `blur(${currentBlur}px)`;
+                } else {
+                    wrapper.style.filter = 'none';
+                }
+
+                // Store previous values
+                prevRotateX = currentRotateX;
+                prevRotateY = currentRotateY;
+
                 requestAnimationFrame(animateTilt);
             }
             animateTilt();
 
-            // Reset on mouse leave
             document.addEventListener('mouseleave', () => {
                 targetRotateX = 0;
                 targetRotateY = 0;
             });
         }
 
-        // ========== [INIT] ==========
+        // Page Navigation (Single Button Toggle)
+        let currentPage = 'bio';
+
+        function initNavigation() {
+            const navSwitch = document.getElementById('nav-switch');
+            const navSwitchPortfolio = document.getElementById('nav-switch-portfolio');
+            const bioPage = document.getElementById('bio-page');
+            const portfolioPage = document.getElementById('portfolio-page');
+
+            function switchPage(targetPage) {
+                if (targetPage === 'portfolio') {
+                    bioPage.classList.remove('active');
+                    portfolioPage.classList.add('active');
+                    currentPage = 'portfolio';
+                } else {
+                    portfolioPage.classList.remove('active');
+                    bioPage.classList.add('active');
+                    currentPage = 'bio';
+                }
+            }
+
+            navSwitch.addEventListener('click', () => {
+                switchPage('portfolio');
+            });
+
+            navSwitchPortfolio.addEventListener('click', () => {
+                switchPage('bio');
+            });
+        }
+
+        // Flip Cards
+        function initFlipCards() {
+            const flipCards = document.querySelectorAll('.flip-card');
+
+            flipCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('flipped');
+                });
+            });
+        }
+
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             SecuritySystem.init();
             initThree();
@@ -1617,11 +2536,11 @@
             syncSystem();
             setInterval(syncSystem, 5000);
 
-            // Initialize Title Animation
             TitleAnimator.init();
-
-            // Initialize Favicon Animation
             FaviconAnimator.init();
+
+            initNavigation();
+            initFlipCards();
 
             setTimeout(() => {
                 const l = document.getElementById('loading-screen');
