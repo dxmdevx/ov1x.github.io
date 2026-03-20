@@ -13,13 +13,13 @@
 <meta name="keywords" content="discord, portfolio, bio card, live presence, lanyard">
 <meta name="author" content="Discord User">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://bio.card/">
+<link rel="canonical" href="https://ov1x.is-a.dev/">
 
 <!-- ═══ Open Graph / Social ═══ -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Live Portfolio — Discord Bio Card">
 <meta property="og:description" content="Live Discord portfolio with real-time presence &amp; activity tracking.">
-<meta property="og:url" content="https://bio.card/">
+<meta property="og:url" content="https://ov1x.is-a.dev/">
 <meta property="og:locale" content="en_US">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="color-scheme" content="dark">
@@ -54,7 +54,7 @@
   "@type":"Person",
   "name":"Discord User",
   "description":"Live portfolio bio card with Discord presence",
-  "url":"https://bio.card/",
+  "url":"https://ov1x.is-a.dev/",
   "sameAs":["https://discord.com"]
 }
 </script>
@@ -171,5 +171,33 @@ var _f=new TextDecoder('utf-8').decode(_e);
 
 <!-- ═══ Perf: mark paint ═══ -->
 <script>if(window.performance&&performance.mark)performance.mark('app-end');</script>
+
+<!-- ═══ Random Hash Rotator ═══ -->
+<script>
+(function(){
+  var _c='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+  function rnd(len){
+    var s='';
+    var arr=new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    for(var i=0;i<len;i++)s+=_c[arr[i]%_c.length];
+    return s;
+  }
+  function rotate(){
+    // random length between 8-24 chars each tick
+    var arr=new Uint8Array(1);
+    crypto.getRandomValues(arr);
+    var len=8+(arr[0]%17);
+    history.replaceState(null,'','#'+rnd(len));
+    // next rotation: 800ms - 2500ms random interval
+    var arr2=new Uint8Array(2);
+    crypto.getRandomValues(arr2);
+    var delay=800+((arr2[0]<<8|arr2[1])%1700);
+    setTimeout(rotate,delay);
+  }
+  // start after 300ms so page renders first
+  setTimeout(rotate,300);
+})();
+</script>
 </body>
 </html>
