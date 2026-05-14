@@ -30,6 +30,10 @@
 <meta name="twitter:title" content="ov1x · Live Discord Profile">
 <meta name="twitter:description" content="Live Discord profile with real-time presence.">
 
+<!-- Security headers (best-effort via meta) -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+
 <!-- Preconnects -->
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,8 +87,13 @@ html,body{
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   user-select:none;-webkit-user-select:none;
+  -ms-user-select:none;-moz-user-select:none;
   touch-action:none;
+  -webkit-touch-callout:none;
 }
+
+img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
+.copy-btn,.dm-btn,.handle,.tag,.atile,.pi-item,.av,#perfMon,#perfMon *{pointer-events:auto;}
 
 .skip-link{position:absolute;top:-100%;left:8px;background:var(--gold);color:#000;
   padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
@@ -103,21 +112,16 @@ html,body{
 }
 #loading.out{opacity:0;visibility:hidden;pointer-events:none;}
 
-/* ── Stickman Stage ── */
 .sm-stage{
   position:relative;
   width:140px;height:130px;
   display:flex;align-items:flex-end;justify-content:center;
 }
-
-/* Ground line */
 .sm-ground{
   position:absolute;bottom:0;left:10%;right:10%;
   height:1px;
   background:linear-gradient(90deg,transparent,rgba(196,163,90,.3),transparent);
 }
-
-/* Shadow under feet */
 .sm-shadow-el{
   position:absolute;bottom:2px;left:50%;
   transform:translateX(-50%);
@@ -127,7 +131,6 @@ html,body{
 }
 @keyframes sm-shadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.2}50%{transform:translateX(-50%) scaleX(.65);opacity:.08}}
 
-/* Stickman SVG */
 .sm-svg{
   width:70px;height:115px;
   overflow:visible;
@@ -136,13 +139,10 @@ html,body{
 }
 @keyframes sm-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
-.sm-svg line,.sm-svg circle{
-  stroke:var(--gold);stroke-linecap:round;fill:none;
-}
+.sm-svg line,.sm-svg circle{stroke:var(--gold);stroke-linecap:round;fill:none;}
 .sm-svg circle{fill:none;stroke-width:2.5;}
 .sm-svg line{stroke-width:2.5;}
 
-/* Running limb animations */
 .sm-arm-l{transform-origin:35px 44px;animation:sm-arm .48s ease-in-out infinite;}
 .sm-arm-r{transform-origin:35px 44px;animation:sm-arm .48s ease-in-out infinite reverse;}
 .sm-leg-l{transform-origin:35px 75px;animation:sm-leg .48s ease-in-out infinite;}
@@ -150,7 +150,6 @@ html,body{
 @keyframes sm-arm{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(28deg)}}
 @keyframes sm-leg{0%,100%{transform:rotate(-32deg)}50%{transform:rotate(32deg)}}
 
-/* Wave state — right arm waves */
 .sm-svg.wave .sm-arm-r{animation:sm-wave .35s ease-in-out 3 forwards;}
 .sm-svg.wave .sm-leg-l,.sm-svg.wave .sm-leg-r,
 .sm-svg.wave .sm-arm-l{animation:none;}
@@ -161,11 +160,7 @@ html,body{
 @keyframes sm-wave{0%{transform:rotate(-100deg)}50%{transform:rotate(-50deg)}100%{transform:rotate(-100deg)}}
 @keyframes sm-cheer{0%{transform:translateY(0)}40%{transform:translateY(-14px)}80%{transform:translateY(-4px)}100%{transform:translateY(0)}}
 
-/* ── Loading text & dots ── */
-.ld-row{
-  margin-top:20px;
-  display:flex;align-items:center;gap:6px;
-}
+.ld-row{margin-top:20px;display:flex;align-items:center;gap:6px;}
 .ld-text{
   font-family:var(--font-m);
   font-size:9px;letter-spacing:4.5px;
@@ -205,6 +200,9 @@ html,body{
 
 /* ════════════════════════════════════════
    SCENE & CARD WRAPPER
+   🔧 FIX: separated float onto its own wrapper
+   so tilt rotateY/rotateX on .card no longer
+   overrides the float translateY on parent.
 ════════════════════════════════════════ */
 .scene{
   position:fixed;inset:0;z-index:2;
@@ -213,19 +211,24 @@ html,body{
           env(safe-area-inset-bottom,12px) env(safe-area-inset-left,12px);
 }
 
+/* outer: fade-in + perspective only */
 .cw{
   perspective:1600px;
   opacity:0;
-  animation:cw-in .9s var(--ease-x) .3s forwards,
-            float 9s ease-in-out 1.2s infinite;
-  will-change:transform;
+  animation:cw-in .9s var(--ease-x) .3s forwards;
+  will-change:opacity;
 }
-@keyframes cw-in{from{opacity:0;transform:translateY(28px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cw-in{from{opacity:0}to{opacity:1}}
+
+/* middle: floating bob (independent from tilt) */
+.cw-float{
+  animation:float 9s ease-in-out 1.2s infinite;
+  will-change:transform;
+  transform-style:preserve-3d;
+}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 
-/* ════════════════════════════════════════
-   CARD
-════════════════════════════════════════ */
+/* inner: receives tilt transform only */
 .card{
   position:relative;
   width:360px;
@@ -238,13 +241,15 @@ html,body{
   border-radius:var(--r);
   border:1px solid var(--border);
   transform-style:preserve-3d;
+  transform:rotateY(0) rotateX(0);
+  transition:transform .25s var(--ease-x), box-shadow .3s ease;
+  will-change:transform;
   box-shadow:
     0 0 0 1px rgba(0,0,0,.85),
     0 40px 100px rgba(0,0,0,.97),
     0 0 80px rgba(0,0,0,.45),
     inset 0 0 120px var(--gold-glow);
   scrollbar-width:none;
-  transition:box-shadow .3s ease;
 }
 .card::-webkit-scrollbar{display:none;}
 .card:focus-visible{outline:1px solid rgba(196,163,90,.4);outline-offset:4px;}
@@ -261,7 +266,6 @@ html,body{
 }
 @keyframes beam-r{to{--ba:360deg}}
 
-/* top shimmer */
 .card::before{
   content:'';position:absolute;top:0;left:15%;right:15%;height:1px;z-index:4;
   pointer-events:none;
@@ -477,6 +481,44 @@ html,body{
   text-transform:uppercase;color:rgba(196,163,90,.18);}
 
 /* ════════════════════════════════════════
+   PERFORMANCE MONITOR
+════════════════════════════════════════ */
+#perfMon{
+  position:fixed;bottom:14px;left:14px;z-index:9997;
+  display:flex;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:14px;
+  background:rgba(12,12,12,.75);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(196,163,90,.13);
+  font-family:var(--font-m);font-size:8.5px;letter-spacing:.8px;
+  color:rgba(240,236,228,.55);
+  cursor:pointer;
+  transition:transform .2s var(--ease-s),background .2s,border-color .2s,opacity .3s;
+  opacity:0;
+}
+#perfMon.show{opacity:1;}
+#perfMon:hover{background:rgba(18,18,18,.9);border-color:rgba(196,163,90,.27);transform:translateY(-1px);}
+#perfMon .pm-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--gold);
+  box-shadow:0 0 8px rgba(196,163,90,.5);
+  animation:pm-pulse 1.8s ease-in-out infinite;
+}
+@keyframes pm-pulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+#perfMon .pm-stat{display:flex;align-items:center;gap:3px;}
+#perfMon .pm-stat strong{color:var(--gold);font-weight:400;}
+#perfMon .pm-sep{opacity:.25;}
+#perfMon.collapsed .pm-stat,#perfMon.collapsed .pm-sep{display:none;}
+#perfMon.collapsed .pm-label{display:inline;}
+#perfMon .pm-label{display:none;}
+
+/* perf grade colors */
+#perfMon[data-grade="a"] .pm-dot{background:var(--online);box-shadow:0 0 8px rgba(59,165,92,.5);}
+#perfMon[data-grade="b"] .pm-dot{background:var(--idle);box-shadow:0 0 8px rgba(250,166,26,.5);}
+#perfMon[data-grade="c"] .pm-dot{background:var(--dnd);box-shadow:0 0 8px rgba(237,66,69,.5);}
+
+/* ════════════════════════════════════════
    TOAST NOTIFICATION
 ════════════════════════════════════════ */
 #toast-root{
@@ -498,6 +540,7 @@ html,body{
 }
 .toast.out{animation:toast-out .3s ease forwards;}
 .toast-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+.toast-dot.warn{background:var(--dnd);box-shadow:0 0 8px rgba(237,66,69,.6);}
 @keyframes toast-in{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes toast-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-8px) scale(.95)}}
 
@@ -531,32 +574,25 @@ html,body{
 .kb-desc{font-size:11px;font-weight:300;color:var(--m1);}
 
 /* ════════════════════════════════════════
-   RESPONSIVE — MOBILE FIRST
+   RESPONSIVE
 ════════════════════════════════════════ */
-
-/* ── XS: 320px ── */
 @media(max-width:359px){
   .card{width:292px;padding:22px 14px 18px;}
   .dname{font-size:18px;}
   .av-wrap,.av{width:76px;height:76px;}
   .pi-grid{grid-template-columns:1fr;}
   .pi-item.full{grid-column:1;}
+  #perfMon{font-size:7.5px;padding:5px 8px;bottom:10px;left:10px;}
 }
-
-/* ── SM: 360-479px ── */
 @media(min-width:360px) and (max-width:479px){
   .card{width:330px;padding:26px 18px 22px;}
   .dname{font-size:19px;}
 }
-
-/* ── MD Mobile: 480-767px ── */
 @media(min-width:480px) and (max-width:767px){
   .card{width:400px;padding:28px 22px 24px;}
 }
-
-/* ── Landscape Mobile ── */
 @media(max-height:500px) and (orientation:landscape){
-  .cw{animation:cw-in .9s var(--ease-x) .3s forwards !important;}
+  .cw-float{animation:none;}
   .card{
     max-height:calc(100dvh - 20px);
     padding:18px 20px 16px;
@@ -566,25 +602,14 @@ html,body{
   .dname{font-size:17px;margin-bottom:2px;}
   .eyebrow{margin-bottom:10px;}
 }
-
-/* ── Tablet: 768-1023px ── */
 @media(min-width:768px) and (max-width:1023px){
   .card{width:400px;padding:34px 28px 28px;}
   .dname{font-size:23px;}
   .av-wrap,.av{width:96px;height:96px;}
 }
+@media(min-width:1024px){.card{width:384px;}}
+@media(min-width:1440px){.card{width:396px;}}
 
-/* ── Desktop: 1024px+ ── */
-@media(min-width:1024px){
-  .card{width:384px;}
-}
-
-/* ── Large Desktop: 1440px+ ── */
-@media(min-width:1440px){
-  .card{width:396px;}
-}
-
-/* ── Reduce motion ── */
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
 }
@@ -598,28 +623,13 @@ html,body{
 <div id="loading" role="status" aria-live="polite" aria-label="Loading Discord presence">
   <div class="sm-stage">
     <div class="sm-shadow-el" aria-hidden="true"></div>
-    <!-- Stickman SVG -->
     <svg class="sm-svg" id="smSvg" viewBox="0 0 70 120" aria-hidden="true" focusable="false">
-      <!-- Head -->
       <circle cx="35" cy="14" r="11" stroke-width="2.5"/>
-      <!-- Body -->
       <line x1="35" y1="25" x2="35" y2="72" stroke-width="2.5"/>
-      <!-- Left arm -->
-      <g class="sm-arm-l">
-        <line x1="35" y1="44" x2="13" y2="61" stroke-width="2.5"/>
-      </g>
-      <!-- Right arm -->
-      <g class="sm-arm-r">
-        <line x1="35" y1="44" x2="57" y2="61" stroke-width="2.5"/>
-      </g>
-      <!-- Left leg -->
-      <g class="sm-leg-l">
-        <line x1="35" y1="72" x2="16" y2="105" stroke-width="2.5"/>
-      </g>
-      <!-- Right leg -->
-      <g class="sm-leg-r">
-        <line x1="35" y1="72" x2="54" y2="105" stroke-width="2.5"/>
-      </g>
+      <g class="sm-arm-l"><line x1="35" y1="44" x2="13" y2="61" stroke-width="2.5"/></g>
+      <g class="sm-arm-r"><line x1="35" y1="44" x2="57" y2="61" stroke-width="2.5"/></g>
+      <g class="sm-leg-l"><line x1="35" y1="72" x2="16" y2="105" stroke-width="2.5"/></g>
+      <g class="sm-leg-r"><line x1="35" y1="72" x2="54" y2="105" stroke-width="2.5"/></g>
     </svg>
     <div class="sm-ground" aria-hidden="true"></div>
   </div>
@@ -627,9 +637,7 @@ html,body{
   <div class="ld-row">
     <span class="ld-text">Connecting</span>
     <div class="ld-dots" aria-hidden="true">
-      <div class="ld-dot"></div>
-      <div class="ld-dot"></div>
-      <div class="ld-dot"></div>
+      <div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div>
     </div>
   </div>
   <div class="ld-sub" id="ldSub">to Discord</div>
@@ -642,136 +650,131 @@ html,body{
 <!-- ════ SCENE ════ -->
 <div class="scene" role="main">
   <div class="cw" id="cw">
-    <div class="card" id="card" role="article" aria-label="Discord Bio Card" tabindex="0">
-      <div class="beam" aria-hidden="true"></div>
+    <!-- 🔧 FIX: extra wrapper so float animation never collides with tilt transform -->
+    <div class="cw-float">
+      <div class="card" id="card" role="article" aria-label="Discord Bio Card" tabindex="0">
+        <div class="beam" aria-hidden="true"></div>
 
-      <!-- Connection badge -->
-      <div class="conn-badge" id="connBadge" aria-live="polite" aria-label="Connection status">
-        <div class="conn-pip" id="connPip"></div>
-        <span id="connTxt">—</span>
-      </div>
+        <div class="conn-badge" id="connBadge" aria-live="polite" aria-label="Connection status">
+          <div class="conn-pip" id="connPip"></div>
+          <span id="connTxt">—</span>
+        </div>
 
-      <p class="eyebrow" aria-hidden="true">Live Portfolio</p>
+        <p class="eyebrow" aria-hidden="true">Live Portfolio</p>
 
-      <!-- Avatar -->
-      <div class="av-wrap">
-        <svg class="av-ring" aria-hidden="true" focusable="false" viewBox="0 0 106 106" fill="none">
-          <circle cx="53" cy="53" r="50" stroke="rgba(196,163,90,.05)" stroke-width="1.5"/>
-          <circle cx="53" cy="53" r="50" stroke="url(#rg)" stroke-width="1.5"
-            stroke-dasharray="85 228" stroke-linecap="round"/>
-          <defs>
-            <linearGradient id="rg" x1="0" y1="0" x2="106" y2="106" gradientUnits="userSpaceOnUse">
-              <stop offset="0%"  stop-color="#c4a35a" stop-opacity="0"/>
-              <stop offset="50%" stop-color="#c4a35a" stop-opacity=".9"/>
-              <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <img class="av" id="avImg"
-          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%231a1a1a' width='90' height='90' rx='45'/%3E%3C/svg%3E"
-          alt="Discord avatar" crossorigin="anonymous"
-          width="88" height="88" decoding="async" loading="eager" fetchpriority="high">
-        <div class="sdot" id="sDot" aria-hidden="true"></div>
-      </div>
-
-      <!-- Name -->
-      <h1 class="dname" id="dName" aria-live="polite">—</h1>
-      <div class="handle-row">
-        <span class="handle" id="uHandle" role="text" aria-label="Discord username">@discord</span>
-        <button class="copy-btn" id="copyBtn" aria-label="Copy username" title="Copy username">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        <!-- Avatar -->
+        <div class="av-wrap">
+          <svg class="av-ring" aria-hidden="true" focusable="false" viewBox="0 0 106 106" fill="none">
+            <circle cx="53" cy="53" r="50" stroke="rgba(196,163,90,.05)" stroke-width="1.5"/>
+            <circle cx="53" cy="53" r="50" stroke="url(#rg)" stroke-width="1.5"
+              stroke-dasharray="85 228" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="rg" x1="0" y1="0" x2="106" y2="106" gradientUnits="userSpaceOnUse">
+                <stop offset="0%"  stop-color="#c4a35a" stop-opacity="0"/>
+                <stop offset="50%" stop-color="#c4a35a" stop-opacity=".9"/>
+                <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
           </svg>
-        </button>
-      </div>
-
-      <!-- Status -->
-      <div class="sline" role="status" aria-live="polite">
-        <div class="spip" id="sPip" aria-hidden="true"></div>
-        <span class="sval" id="sVal">Connecting…</span>
-      </div>
-
-      <!-- Custom Status -->
-      <div class="cstatus" id="cStatus" role="status" aria-live="polite" aria-label="Custom status"></div>
-
-      <!-- DM Button -->
-      <a class="dm-btn" id="dmBtn"
-        href="https://discord.com" target="_blank" rel="noopener noreferrer"
-        aria-label="Send a direct message on Discord">
-        <svg class="dm-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.054a19.905 19.905 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-        </svg>
-        <span>Message on Discord</span>
-        <span class="dm-arr" aria-hidden="true">→</span>
-      </a>
-
-      <hr class="div" aria-hidden="true">
-
-      <!-- Activity -->
-      <h2 class="slbl" id="act-lbl">Current Activity</h2>
-      <div id="actArea" aria-labelledby="act-lbl" aria-live="polite">
-        <div class="no-act" role="status">No active session</div>
-      </div>
-
-      <hr class="div" style="margin-top:18px" aria-hidden="true">
-
-      <!-- Personal Info -->
-      <h2 class="slbl" id="pi-lbl">Personal</h2>
-      <dl class="pi-grid" aria-labelledby="pi-lbl">
-        <div class="pi-item">
-          <dt class="pi-lbl">Pronouns</dt>
-          <dd class="pi-val">He / Him</dd>
+          <img class="av" id="avImg"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%231a1a1a' width='90' height='90' rx='45'/%3E%3C/svg%3E"
+            alt="Discord avatar" crossorigin="anonymous"
+            width="88" height="88" decoding="async" loading="eager" fetchpriority="high"
+            draggable="false" oncontextmenu="return false">
+          <div class="sdot" id="sDot" aria-hidden="true"></div>
         </div>
-        <div class="pi-item">
-          <dt class="pi-lbl">Age</dt>
-          <dd class="pi-val muted">Same as yesterday</dd>
-        </div>
-        <div class="pi-item">
-          <dt class="pi-lbl">Location</dt>
-          <dd class="pi-val">
-            ☀️ Sun
-            <span class="pi-sub">Building from Galaxy</span>
-          </dd>
-        </div>
-        <div class="pi-item">
-          <dt class="pi-lbl">Working</dt>
-          <dd class="pi-val">🌙 Moon~</dd>
-        </div>
-        <div class="pi-item">
-          <dt class="pi-lbl">Local Time</dt>
-          <dd class="pi-val">
-            <span class="clock-val" id="clockVal">--:--</span><span class="clock-ampm" id="clockAP"></span>
-          </dd>
-        </div>
-        <div class="pi-item">
-          <dt class="pi-lbl">Timezone</dt>
-          <dd class="pi-val muted" id="tzVal">—</dd>
-        </div>
-        <div class="pi-item full">
-          <dt class="pi-lbl">Hobbies</dt>
-          <dd class="pi-val">
-            <ul class="tag-list" aria-label="Hobbies">
-              <li class="tag">🎵 Music</li>
-              <li class="tag">🎌 Anime</li>
-              <li class="tag">💻 Coding</li>
-              <li class="tag">🎮 Games</li>
-              <li class="tag">📸 Photos</li>
-            </ul>
-          </dd>
-        </div>
-      </dl>
 
-      <!-- Footer -->
-      <div class="cfoot" aria-hidden="true">
-        <div class="fl"></div>
-        <div class="fdot"></div>
-        <div class="ftxt">Live Presence</div>
-        <div class="fdot"></div>
-        <div class="flr"></div>
-      </div>
-    </div><!-- .card -->
+        <h1 class="dname" id="dName" aria-live="polite">—</h1>
+        <div class="handle-row">
+          <span class="handle" id="uHandle" role="text" aria-label="Discord username">@discord</span>
+          <button class="copy-btn" id="copyBtn" aria-label="Copy username" title="Copy username">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sline" role="status" aria-live="polite">
+          <div class="spip" id="sPip" aria-hidden="true"></div>
+          <span class="sval" id="sVal">Connecting…</span>
+        </div>
+
+        <div class="cstatus" id="cStatus" role="status" aria-live="polite" aria-label="Custom status"></div>
+
+        <a class="dm-btn" id="dmBtn"
+          href="https://discord.com" target="_blank" rel="noopener noreferrer"
+          aria-label="Send a direct message on Discord">
+          <svg class="dm-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.054a19.905 19.905 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+          </svg>
+          <span>Message on Discord</span>
+          <span class="dm-arr" aria-hidden="true">→</span>
+        </a>
+
+        <hr class="div" aria-hidden="true">
+
+        <h2 class="slbl" id="act-lbl">Current Activity</h2>
+        <div id="actArea" aria-labelledby="act-lbl" aria-live="polite">
+          <div class="no-act" role="status">No active session</div>
+        </div>
+
+        <hr class="div" style="margin-top:18px" aria-hidden="true">
+
+        <!-- 🪶 Simplified personal: 4 items only -->
+        <h2 class="slbl" id="pi-lbl">Personal</h2>
+        <dl class="pi-grid" aria-labelledby="pi-lbl">
+          <div class="pi-item">
+            <dt class="pi-lbl">Local Time</dt>
+            <dd class="pi-val">
+              <span class="clock-val" id="clockVal">--:--</span><span class="clock-ampm" id="clockAP"></span>
+            </dd>
+          </div>
+          <div class="pi-item">
+            <dt class="pi-lbl">Timezone</dt>
+            <dd class="pi-val muted" id="tzVal">—</dd>
+          </div>
+          <div class="pi-item">
+            <dt class="pi-lbl">Pronouns</dt>
+            <dd class="pi-val">He / Him</dd>
+          </div>
+          <div class="pi-item">
+            <dt class="pi-lbl">From</dt>
+            <dd class="pi-val">🌙 Earth</dd>
+          </div>
+          <div class="pi-item full">
+            <dt class="pi-lbl">Hobbies</dt>
+            <dd class="pi-val">
+              <ul class="tag-list" aria-label="Hobbies">
+                <li class="tag">🎵 Music</li>
+                <li class="tag">💻 Code</li>
+                <li class="tag">🎮 Games</li>
+              </ul>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="cfoot" aria-hidden="true">
+          <div class="fl"></div>
+          <div class="fdot"></div>
+          <div class="ftxt">Live Presence</div>
+          <div class="fdot"></div>
+          <div class="flr"></div>
+        </div>
+      </div><!-- .card -->
+    </div><!-- .cw-float -->
   </div><!-- .cw -->
 </div><!-- .scene -->
+
+<!-- ⚡ Performance Monitor -->
+<div id="perfMon" role="status" aria-label="Performance metrics" title="Click to toggle / Press P">
+  <div class="pm-dot" aria-hidden="true"></div>
+  <span class="pm-label">PERF</span>
+  <div class="pm-stat"><strong id="pmLoad">—</strong></div>
+  <span class="pm-sep">·</span>
+  <div class="pm-stat"><strong id="pmFps">—</strong>fps</div>
+  <span class="pm-sep">·</span>
+  <div class="pm-stat" id="pmNetWrap"><strong id="pmNet">—</strong></div>
+</div>
 
 <!-- Toast container -->
 <div id="toast-root" aria-live="polite" aria-atomic="true"></div>
@@ -780,26 +783,12 @@ html,body{
 <div id="kb-overlay" role="dialog" aria-label="Keyboard shortcuts" aria-modal="true">
   <div class="kb-panel">
     <div class="kb-title">Shortcuts</div>
-    <div class="kb-row">
-      <span class="kb-key">C</span>
-      <span class="kb-desc">Copy username</span>
-    </div>
-    <div class="kb-row">
-      <span class="kb-key">D</span>
-      <span class="kb-desc">Open Discord profile</span>
-    </div>
-    <div class="kb-row">
-      <span class="kb-key">R</span>
-      <span class="kb-desc">Refresh presence</span>
-    </div>
-    <div class="kb-row">
-      <span class="kb-key">?</span>
-      <span class="kb-desc">Toggle this panel</span>
-    </div>
-    <div class="kb-row">
-      <span class="kb-key">Esc</span>
-      <span class="kb-desc">Close panel</span>
-    </div>
+    <div class="kb-row"><span class="kb-key">C</span><span class="kb-desc">Copy username</span></div>
+    <div class="kb-row"><span class="kb-key">D</span><span class="kb-desc">Open Discord profile</span></div>
+    <div class="kb-row"><span class="kb-key">R</span><span class="kb-desc">Refresh presence</span></div>
+    <div class="kb-row"><span class="kb-key">P</span><span class="kb-desc">Toggle perf monitor</span></div>
+    <div class="kb-row"><span class="kb-key">?</span><span class="kb-desc">Toggle this panel</span></div>
+    <div class="kb-row"><span class="kb-key">Esc</span><span class="kb-desc">Close panel</span></div>
   </div>
 </div>
 
@@ -809,8 +798,97 @@ html,body{
 <script>
 /* ════════════════════════════════════════════
    ⚙️  CONFIG — set your Discord user ID here
+   (encoded lightly to slow casual scraping)
 ════════════════════════════════════════════ */
-const DISCORD_USER_ID = '1045863666412687380';
+const DISCORD_USER_ID = atob('MTA0NTg2MzY2NjQxMjY4NzM4MA==');
+
+/* ════════════════════════════════════════════
+   🛡️  ANTI-THEFT / DATA PROTECTION
+   Note: nothing client-side is *real* security.
+   Anyone determined can still see source. This
+   raises the bar against casual scraping/copying.
+════════════════════════════════════════════ */
+(function initProtection() {
+  const blocked = (msg) => { try { window._Toast && window._Toast.show(msg, 1600, true); } catch(_) {} };
+
+  /* Disable right-click everywhere */
+  document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    blocked('Right-click disabled');
+    return false;
+  });
+
+  /* Disable text selection programmatically */
+  document.addEventListener('selectstart', e => {
+    const t = e.target;
+    /* allow inside buttons / interactive */
+    if (t && (t.closest('input,textarea,[contenteditable]'))) return;
+    e.preventDefault();
+    return false;
+  });
+
+  /* Disable image drag */
+  document.addEventListener('dragstart', e => { e.preventDefault(); return false; });
+
+  /* Disable copy with notification */
+  document.addEventListener('copy', e => {
+    /* allow only if user clicked our copy button (sets a flag) */
+    if (window._allowCopy) { window._allowCopy = false; return; }
+    e.preventDefault();
+    blocked('Copy disabled');
+    return false;
+  });
+
+  /* Block dev shortcuts */
+  document.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+    /* F12 */
+    if (e.key === 'F12') { e.preventDefault(); blocked('DevTools blocked'); return false; }
+    /* Ctrl+Shift+I / J / C  */
+    if (ctrl && shift && (k === 'i' || k === 'j' || k === 'c')) {
+      e.preventDefault(); blocked('DevTools blocked'); return false;
+    }
+    /* Ctrl+U (view source) */
+    if (ctrl && k === 'u') { e.preventDefault(); blocked('View source blocked'); return false; }
+    /* Ctrl+S (save page) */
+    if (ctrl && k === 's') { e.preventDefault(); blocked('Save blocked'); return false; }
+    /* Ctrl+A (select all) */
+    if (ctrl && k === 'a') { e.preventDefault(); return false; }
+    /* Ctrl+P (print) */
+    if (ctrl && k === 'p' && !e.altKey) {
+      /* lowercase p alone is reserved for perf toggle, with ctrl = print */
+      e.preventDefault(); blocked('Print blocked'); return false;
+    }
+  });
+
+  /* DevTools detection (heuristic) — warn only, don't break */
+  let warned = false;
+  const threshold = 160;
+  setInterval(() => {
+    const widthDiff  = window.outerWidth  - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+    if ((widthDiff > threshold || heightDiff > threshold) && !warned) {
+      warned = true;
+      blocked('DevTools detected');
+      console.clear();
+    } else if (widthDiff <= threshold && heightDiff <= threshold) {
+      warned = false;
+    }
+  }, 1500);
+
+  /* Console warning */
+  const cssBig  = 'color:#c4a35a;font-size:22px;font-family:serif;font-weight:bold;';
+  const cssBody = 'color:#f0ece4;font-size:12px;';
+  console.log('%cStop!', cssBig);
+  console.log('%cThis console is reserved. Anything you paste here can compromise your account.', cssBody);
+
+  /* Anti-iframe (don't allow embedding in untrusted sites) */
+  if (window.top !== window.self) {
+    try { window.top.location = window.self.location; } catch(_) { document.body.innerHTML = ''; }
+  }
+})();
 
 /* ════════════════════════════════════════════
    UTILS
@@ -869,7 +947,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
   };
   animate();
 
-  /* Pause when tab hidden */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) cancelAnimationFrame(raf);
     else animate();
@@ -877,47 +954,66 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
 })();
 
 /* ════════════════════════════════════════════
-   TILT — mouse (desktop) + gyro (mobile)
+   🔧 TILT — desktop mouse + mobile gyro
+   FIXED: tilt sets transform ONLY on .card.
+   Float animation now lives on its own
+   .cw-float wrapper, so they never fight.
+   Also uses requestAnimationFrame for smoothness.
 ════════════════════════════════════════════ */
 (function initTilt() {
   const card = $('card');
   if (!card || isReducedMotion()) return;
 
   const scene = card.closest('.scene');
+  let targetX = 0, targetY = 0, curX = 0, curY = 0, rafId = null;
+
+  function loop() {
+    curX += (targetX - curX) * 0.12;
+    curY += (targetY - curY) * 0.12;
+    card.style.transform = `rotateY(${curX}deg) rotateX(${-curY}deg)`;
+    if (Math.abs(curX - targetX) > 0.05 || Math.abs(curY - targetY) > 0.05) {
+      rafId = requestAnimationFrame(loop);
+    } else {
+      rafId = null;
+    }
+  }
+  function kick() { if (!rafId) rafId = requestAnimationFrame(loop); }
 
   if (!isMobile()) {
-    /* Mouse parallax */
+    /* Desktop: mouse parallax */
     scene.addEventListener('mousemove', e => {
       const r = card.getBoundingClientRect();
       const dx = ((e.clientX - r.left) / r.width  - .5) * 2;
       const dy = ((e.clientY - r.top)  / r.height - .5) * 2;
-      card.style.transform = `rotateY(${dx * 5}deg) rotateX(${-dy * 4}deg)`;
+      targetX = dx * 5;
+      targetY = dy * 4;
+      kick();
     }, { passive: true });
-    scene.addEventListener('mouseleave', () => { card.style.transform = ''; }, { passive: true });
+    scene.addEventListener('mouseleave', () => {
+      targetX = 0; targetY = 0; kick();
+    }, { passive: true });
   } else {
-    /* DeviceOrientation tilt */
+    /* Mobile: gyro */
     let baseB = null, baseG = null;
     window.addEventListener('deviceorientation', e => {
       if (baseB === null) { baseB = e.beta; baseG = e.gamma; return; }
       const dy = Math.max(-1, Math.min(1, (e.beta  - baseB) / 20));
       const dx = Math.max(-1, Math.min(1, (e.gamma - baseG) / 20));
-      card.style.transform = `rotateY(${dx * 4}deg) rotateX(${-dy * 3}deg)`;
+      targetX = dx * 4; targetY = dy * 3; kick();
     }, { passive: true });
 
-    /* Touch tilt fallback */
     let startX, startY;
     scene.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     }, { passive: true });
     scene.addEventListener('touchmove', e => {
       if (startX == null) return;
       const dx = Math.max(-1, Math.min(1, (e.touches[0].clientX - startX) / 80));
       const dy = Math.max(-1, Math.min(1, (e.touches[0].clientY - startY) / 80));
-      card.style.transform = `rotateY(${dx * 4}deg) rotateX(${-dy * 3}deg)`;
+      targetX = dx * 4; targetY = dy * 3; kick();
     }, { passive: true });
     scene.addEventListener('touchend', () => {
-      card.style.transform = '';
+      targetX = 0; targetY = 0; kick();
       startX = startY = null;
     }, { passive: true });
   }
@@ -928,10 +1024,10 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
 ════════════════════════════════════════════ */
 const Toast = (function() {
   const root = $('toast-root');
-  function show(msg, duration = 2400) {
+  function show(msg, duration = 2400, warn = false) {
     const el = document.createElement('div');
     el.className = 'toast';
-    el.innerHTML = `<div class="toast-dot"></div><span>${msg}</span>`;
+    el.innerHTML = `<div class="toast-dot${warn?' warn':''}"></div><span>${msg}</span>`;
     root.appendChild(el);
     setTimeout(() => {
       el.classList.add('out');
@@ -939,6 +1035,74 @@ const Toast = (function() {
     }, duration);
   }
   return { show };
+})();
+window._Toast = Toast;
+
+/* ════════════════════════════════════════════
+   ⚡ PERFORMANCE MONITOR
+════════════════════════════════════════════ */
+(function initPerfMon() {
+  const el = $('perfMon');
+  const elLoad = $('pmLoad');
+  const elFps  = $('pmFps');
+  const elNet  = $('pmNet');
+  const elNetW = $('pmNetWrap');
+
+  /* Load time from Navigation Timing */
+  function readLoadTime() {
+    try {
+      const nav = performance.getEntriesByType('navigation')[0];
+      if (nav) {
+        const ms = Math.round(nav.domContentLoadedEventEnd || nav.duration || 0);
+        elLoad.textContent = (ms / 1000).toFixed(2) + 's';
+        /* grade */
+        const grade = ms < 1500 ? 'a' : ms < 3500 ? 'b' : 'c';
+        el.dataset.grade = grade;
+        return;
+      }
+    } catch(_) {}
+    elLoad.textContent = '—';
+  }
+  if (document.readyState === 'complete') readLoadTime();
+  else window.addEventListener('load', () => setTimeout(readLoadTime, 100));
+
+  /* FPS counter */
+  let frames = 0, lastTime = performance.now(), fps = 0;
+  function fpsLoop(now) {
+    frames++;
+    if (now - lastTime >= 1000) {
+      fps = Math.round(frames * 1000 / (now - lastTime));
+      elFps.textContent = fps;
+      frames = 0;
+      lastTime = now;
+    }
+    requestAnimationFrame(fpsLoop);
+  }
+  requestAnimationFrame(fpsLoop);
+
+  /* Network info */
+  function readNet() {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c) {
+      const eff = (c.effectiveType || '').toUpperCase() || '—';
+      const dl  = c.downlink ? c.downlink.toFixed(1) + 'M' : '';
+      elNet.textContent = dl ? `${eff} ${dl}` : eff;
+      if (c.addEventListener) c.addEventListener('change', readNet);
+    } else {
+      elNetW.style.display = 'none';
+    }
+  }
+  readNet();
+
+  /* Show after load */
+  setTimeout(() => el.classList.add('show'), 600);
+
+  /* Click to toggle collapse */
+  let collapsed = false;
+  el.addEventListener('click', () => {
+    collapsed = !collapsed;
+    el.classList.toggle('collapsed', collapsed);
+  });
 })();
 
 /* ════════════════════════════════════════════
@@ -949,7 +1113,6 @@ const Toast = (function() {
   const ca = $('clockAP');
   const tz = $('tzVal');
 
-  /* Timezone abbrev */
   try {
     const tz_name = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const short = new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
@@ -971,15 +1134,15 @@ const Toast = (function() {
 })();
 
 /* ════════════════════════════════════════════
-   COPY TO CLIPBOARD
+   COPY TO CLIPBOARD (allowed via flag)
 ════════════════════════════════════════════ */
 function copyUsername() {
   const handle = $('uHandle').textContent;
   if (!handle || handle === '@discord') return;
+  window._allowCopy = true;
   navigator.clipboard?.writeText(handle).then(() => {
     Toast.show(`Copied ${handle}`);
   }).catch(() => {
-    /* Fallback */
     const ta = document.createElement('textarea');
     ta.value = handle;
     ta.style.cssText = 'position:fixed;opacity:0;';
@@ -997,7 +1160,7 @@ $('uHandle').addEventListener('click', copyUsername);
 /* ════════════════════════════════════════════
    CONNECTION BADGE
 ════════════════════════════════════════════ */
-function setBadge(state) { // 'connecting' | 'live' | 'rest' | 'err'
+function setBadge(state) {
   const badge = $('connBadge');
   const txt   = $('connTxt');
   badge.className = 'conn-badge';
@@ -1052,7 +1215,6 @@ function renderActivity(data) {
   if (area._spTick)  { clearInterval(area._spTick);  area._spTick  = null; }
   if (area._elTick)  { clearInterval(area._elTick);  area._elTick  = null; }
 
-  /* Spotify */
   const sp = data.spotify;
   if (sp) {
     const duration = sp.timestamps ? (sp.timestamps.end - sp.timestamps.start) : 1;
@@ -1060,7 +1222,7 @@ function renderActivity(data) {
     area.innerHTML = `
       <div class="atile" role="article" aria-label="Listening to ${sp.song}">
         <div class="a-thumb">
-          ${sp.album_art_url ? `<img src="${sp.album_art_url}" alt="${sp.album}" onerror="this.style.display='none'">` : '🎵'}
+          ${sp.album_art_url ? `<img src="${sp.album_art_url}" alt="${sp.album}" draggable="false" oncontextmenu="return false" onerror="this.style.display='none'">` : '🎵'}
         </div>
         <div class="a-info">
           <div class="a-name">🎵 ${sp.song}</div>
@@ -1087,7 +1249,7 @@ function renderActivity(data) {
       const src = raw.startsWith('mp:external/')
         ? 'https://media.discordapp.net/external/' + raw.replace('mp:external/', '')
         : `https://cdn.discordapp.com/app-assets/${a.application_id}/${raw}.png`;
-      thumb = `<img src="${src}" alt="${a.name}" onerror="this.parentElement.textContent='🎮'">`;
+      thumb = `<img src="${src}" alt="${a.name}" draggable="false" oncontextmenu="return false" onerror="this.parentElement.textContent='🎮'">`;
     } else thumb = '🎮';
     return `
       <div class="atile" role="article" aria-label="${a.name}">
@@ -1122,7 +1284,6 @@ function applyPresence(data) {
     img.src = url;
     img.alt = user.global_name || user.username;
 
-    /* favicon */
     const fav = $('favicon');
     if (fav && hash) fav.href = `https://cdn.discordapp.com/avatars/${user.id}/${hash}.webp?size=32`;
 
@@ -1143,7 +1304,6 @@ function applyPresence(data) {
     $('sVal').textContent = 'Set User ID';
     setBadge('err');
     hideLoading();
-    console.warn('[Lanyard] Set DISCORD_USER_ID in CONFIG.');
     return;
   }
 
@@ -1162,13 +1322,13 @@ function applyPresence(data) {
     ws.addEventListener('message', e => {
       let msg; try { msg = JSON.parse(e.data); } catch { return; }
       switch (msg.op) {
-        case 1: /* Hello */
+        case 1:
           if (hbInterval) clearInterval(hbInterval);
           hbInterval = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: 3 }));
           }, msg.d.heartbeat_interval);
           break;
-        case 0: /* Dispatch */
+        case 0:
           if (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE') {
             applyPresence(msg.d);
             setBadge('live');
@@ -1200,7 +1360,6 @@ function applyPresence(data) {
 
   connect();
 
-  /* Refresh presence on R key */
   window._lanyardRefresh = () => {
     if (ws?.readyState === WebSocket.OPEN) ws.close();
     dead = false;
@@ -1223,7 +1382,6 @@ function hideLoading() {
   if (_loadingDone) return;
   _loadingDone = true;
   const el = $('loading'), svg = $('smSvg');
-  /* Celebrate: stickman waves + jumps */
   svg.classList.add('wave');
   setTimeout(() => {
     el.classList.add('out');
@@ -1231,9 +1389,7 @@ function hideLoading() {
   }, 900);
 }
 
-/* Show sub-text after 1.5s */
 setTimeout(() => { const s = $('ldSub'); if (s) s.classList.add('show'); }, 1500);
-/* Fallback hide */
 setTimeout(hideLoading, 5000);
 
 /* ════════════════════════════════════════════
@@ -1242,9 +1398,7 @@ setTimeout(hideLoading, 5000);
 (function initKeyboard() {
   const overlay = $('kb-overlay');
 
-  function toggleOverlay() {
-    overlay.classList.toggle('show');
-  }
+  function toggleOverlay() { overlay.classList.toggle('show'); }
   overlay.addEventListener('click', e => {
     if (e.target === overlay) overlay.classList.remove('show');
   });
@@ -1254,10 +1408,16 @@ setTimeout(hideLoading, 5000);
       if (e.key === 'Escape') overlay.classList.remove('show');
       return;
     }
+    /* Ignore if user is typing in an input */
+    if (e.target.closest('input,textarea,[contenteditable]')) return;
+    /* Ignore if Ctrl/Meta held (those are reserved by anti-theft) */
+    if (e.ctrlKey || e.metaKey) return;
+
     switch (e.key.toLowerCase()) {
       case 'c': copyUsername(); break;
       case 'd': { const url = $('dmBtn').href; if (url !== 'https://discord.com') window.open(url, '_blank'); break; }
       case 'r': window._lanyardRefresh?.(); break;
+      case 'p': $('perfMon').click(); break;
       case '?': toggleOverlay(); break;
     }
   });
