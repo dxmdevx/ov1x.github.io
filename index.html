@@ -18,28 +18,36 @@
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="ov1x">
 <meta property="og:title" content="ov1x · Live Discord Profile">
 <meta property="og:description" content="Live Discord profile with real-time presence & activity.">
 <meta property="og:url" content="https://ov1x.is-a.dev/">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://ov1x.is-a.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ov1x — Live Discord Profile">
 <meta name="theme-color" content="#060606">
 <meta name="color-scheme" content="dark">
 
 <!-- Twitter -->
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="ov1x · Live Discord Profile">
 <meta name="twitter:description" content="Live Discord profile with real-time presence.">
+<meta name="twitter:image" content="https://ov1x.is-a.dev/og.png">
+<meta name="twitter:image:alt" content="ov1x — Live Discord Profile">
 
-<!-- Security headers (best-effort via meta) -->
+<!-- Security headers (best-effort via meta; see note for true header-based hardening) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; frame-src 'none'; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net https://i.scdn.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.lanyard.rest wss://api.lanyard.rest https://ipwho.is https://ipapi.co https://cloudflareinsights.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; manifest-src 'self'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+<meta http-equiv="Permissions-Policy" content="interest-cohort=(), camera=(), microphone=(), geolocation=()">
 
 <!-- Preconnects -->
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.discordapp.com" crossorigin>
 <link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
-<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://media.discordapp.net">
 <link rel="dns-prefetch" href="https://i.scdn.co">
 
 <!-- Fonts -->
@@ -47,8 +55,8 @@
   rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"></noscript>
 
-<!-- Favicon (dynamic) -->
-<link rel="icon" id="favicon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+<!-- Favicon (dynamic; swapped to live avatar once presence loads) -->
+<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23060606'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23c4a35a' stroke-width='2.4'/%3E%3C/svg%3E">
 
 <!-- JSON-LD -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"ov1x","description":"Live Discord bio card","url":"https://ov1x.is-a.dev/"}</script>
@@ -93,7 +101,7 @@ html,body{
 }
 
 img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
-.copy-btn,.dm-btn,.handle,.tag,.atile,.pi-item,.av,#perfMon,#perfMon *{pointer-events:auto;}
+.copy-btn,.dm-btn,.handle,.tag,.atile,.pi-item,.av,#perfMon,#perfMon *,#me-overlay,#me-overlay *{pointer-events:auto;}
 
 .skip-link{position:absolute;top:-100%;left:8px;background:var(--gold);color:#000;
   padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
@@ -497,6 +505,22 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   transition:transform .2s var(--ease-s),background .2s,border-color .2s,opacity .3s;
   opacity:0;
 }
+
+/* Private "My IP" button — hidden unless opened with #me */
+#meBtn{
+  position:fixed;bottom:14px;right:14px;z-index:9997;
+  display:none;align-items:center;gap:5px;
+  padding:8px 12px;border-radius:14px;
+  background:rgba(12,12,12,.8);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(196,163,90,.22);
+  font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(196,163,90,.85);cursor:pointer;pointer-events:auto;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .2s,border-color .2s,transform .15s var(--ease-s);
+}
+#meBtn.show{display:inline-flex;}
+#meBtn:hover,#meBtn:active{background:rgba(18,18,18,.92);border-color:rgba(196,163,90,.45);transform:translateY(-1px);}
 #perfMon.show{opacity:1;}
 #perfMon:hover{background:rgba(18,18,18,.9);border-color:rgba(196,163,90,.27);transform:translateY(-1px);}
 #perfMon .pm-dot{
@@ -572,6 +596,48 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   color:var(--m1);
 }
 .kb-desc{font-size:11px;font-weight:300;color:var(--m1);}
+
+/* ════════════════════════════════════════
+   PRIVATE "MY DEVICE" PANEL
+════════════════════════════════════════ */
+#me-overlay{
+  position:fixed;inset:0;z-index:9991;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:none;align-items:center;justify-content:center;
+  padding:16px;pointer-events:auto;
+}
+#me-overlay.show{display:flex;}
+.me-panel{min-width:300px;max-width:340px;width:100%;}
+.me-lock{font-size:12px;opacity:.5;margin-left:4px;}
+.me-rows{display:flex;flex-direction:column;gap:0;margin-bottom:14px;}
+.me-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.me-row:last-child{border-bottom:none;}
+.me-k{
+  font-family:var(--font-m);font-size:8px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--gold);opacity:.45;flex-shrink:0;
+}
+.me-v{
+  font-family:var(--font-m);font-size:10.5px;font-weight:300;
+  color:var(--white);text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  max-width:62%;
+}
+.me-copy{
+  width:100%;padding:9px;margin-bottom:10px;
+  background:rgba(196,163,90,.05);border:1px solid rgba(196,163,90,.18);
+  border-radius:var(--r3);color:rgba(196,163,90,.8);
+  font-family:var(--font-m);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;transition:background .2s,border-color .2s,color .2s;
+}
+.me-copy:hover{background:rgba(196,163,90,.1);border-color:rgba(196,163,90,.35);color:rgba(196,163,90,1);}
+.me-note{
+  font-family:var(--font-m);font-size:7.5px;letter-spacing:1.5px;
+  text-transform:uppercase;color:rgba(240,236,228,.22);text-align:center;
+}
 
 /* ════════════════════════════════════════
    RESPONSIVE
@@ -776,6 +842,9 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   <div class="pm-stat" id="pmNetWrap"><strong id="pmNet">—</strong></div>
 </div>
 
+<!-- Private mobile trigger — only revealed when opened with #me -->
+<button id="meBtn" type="button" aria-label="My device info (private)" title="My device (private)">🔒 My IP</button>
+
 <!-- Toast container -->
 <div id="toast-root" aria-live="polite" aria-atomic="true"></div>
 
@@ -787,13 +856,40 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <div class="kb-row"><span class="kb-key">D</span><span class="kb-desc">Open Discord profile</span></div>
     <div class="kb-row"><span class="kb-key">R</span><span class="kb-desc">Refresh presence</span></div>
     <div class="kb-row"><span class="kb-key">P</span><span class="kb-desc">Toggle perf monitor</span></div>
+    <div class="kb-row"><span class="kb-key">I</span><span class="kb-desc">My device (private)</span></div>
     <div class="kb-row"><span class="kb-key">?</span><span class="kb-desc">Toggle this panel</span></div>
     <div class="kb-row"><span class="kb-key">Esc</span><span class="kb-desc">Close panel</span></div>
   </div>
 </div>
 
-<!-- Three.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" crossorigin="anonymous"></script>
+<!-- ════ PRIVATE "MY DEVICE" PANEL ════
+     Hidden by default. Only YOU can open it (press the I key, or load the
+     page with #me in the URL — e.g. https://ov1x.is-a.dev/#me ). It shows
+     only the viewer's OWN device & connection info, computed entirely in the
+     browser. Nothing here is ever stored or sent anywhere, and your IP is not
+     written into the file — so it can never be shown to any visitor. -->
+<div id="me-overlay" role="dialog" aria-label="My device info" aria-modal="true">
+  <div class="kb-panel me-panel">
+    <div class="kb-title">My Device <span class="me-lock" title="Private — only on this device">🔒</span></div>
+    <div class="me-rows" id="meRows">
+      <div class="me-row"><span class="me-k">Public IP</span><span class="me-v" id="meIp">…</span></div>
+      <div class="me-row"><span class="me-k">Location</span><span class="me-v" id="meLoc">…</span></div>
+      <div class="me-row"><span class="me-k">ISP</span><span class="me-v" id="meIsp">…</span></div>
+      <div class="me-row"><span class="me-k">Device</span><span class="me-v" id="meDev">…</span></div>
+      <div class="me-row"><span class="me-k">Browser</span><span class="me-v" id="meBrow">…</span></div>
+      <div class="me-row"><span class="me-k">OS</span><span class="me-v" id="meOs">…</span></div>
+      <div class="me-row"><span class="me-k">Screen</span><span class="me-v" id="meScr">…</span></div>
+      <div class="me-row"><span class="me-k">Timezone</span><span class="me-v" id="meTz">…</span></div>
+      <div class="me-row"><span class="me-k">Language</span><span class="me-v" id="meLang">…</span></div>
+      <div class="me-row"><span class="me-k">Network</span><span class="me-v" id="meNet">…</span></div>
+    </div>
+    <button class="me-copy" id="meCopy" type="button">Copy IP</button>
+    <div class="me-note">Private · nothing is sent or stored · press Esc to close</div>
+  </div>
+</div>
+
+<!-- Background renderer is fully self-contained below (no external CDN,
+     so ad-blockers / content blockers can never strip the animation). -->
 
 <script>
 /* ════════════════════════════════════════════
@@ -898,59 +994,187 @@ const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera
 const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduce)').matches;
 
 /* ════════════════════════════════════════════
-   THREE.JS BACKGROUND
+   SELF-CONTAINED BACKGROUND  (no external libs)
+   Lightweight pseudo-3D gold particle field on a
+   2D canvas. Because nothing is loaded from a CDN,
+   no ad-blocker or content-blocker can strip it —
+   the animation always runs. Auto-pauses when the
+   tab is hidden and respects reduced-motion.
 ════════════════════════════════════════════ */
 (function initBG() {
-  if (!window.THREE) return;
   const canvas = $('bg');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'low-power' });
-  const mobile = isMobile();
-  renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.5 : 2));
-  renderer.setClearColor(0x060606, 1);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  if (!ctx) return;
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
-  camera.position.z = 500;
+  const mobile  = isMobile();
+  const reduced = isReducedMotion();
+  let dpr = Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2);
+  let W = 0, H = 0, cx = 0, cy = 0;
 
-  const N = mobile ? 350 : 650;
-  const geo = new THREE.BufferGeometry();
-  const pos = new Float32Array(N * 3);
-  for (let i = 0; i < N * 3; i++) pos[i] = (Math.random() - .5) * 1900;
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const mat = new THREE.PointsMaterial({ size: 1.2, color: 0xc4a35a, transparent: true, opacity: 0.16, sizeAttenuation: true });
-  const pts = new THREE.Points(geo, mat);
-  scene.add(pts);
+  /* particle field — each has a 3D-ish depth (z) for parallax */
+  const N = reduced ? 90 : (mobile ? 220 : 460);
+  const FOCAL = 430;
+  let parts = [];
+
+  function seed() {
+    parts = new Array(N);
+    for (let i = 0; i < N; i++) {
+      parts[i] = {
+        x: (Math.random() - .5) * 1900,
+        y: (Math.random() - .5) * 1900,
+        z: Math.random() * 1900 + 1,
+      };
+    }
+  }
 
   function resize() {
-    renderer.setSize(innerWidth, innerHeight);
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
+    W = innerWidth; H = innerHeight; cx = W / 2; cy = H / 2;
+    dpr = Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2);
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   resize();
+  seed();
   window.addEventListener('resize', resize, { passive: true });
 
+  /* pointer parallax (desktop only) */
   let mx = 0, my = 0;
-  if (!mobile) {
+  if (!mobile && !reduced) {
     window.addEventListener('mousemove', e => {
       mx = (e.clientX / innerWidth  - .5) * 2;
       my = (e.clientY / innerHeight - .5) * 2;
     }, { passive: true });
   }
 
-  let t = 0, raf;
-  const animate = () => {
-    raf = requestAnimationFrame(animate);
-    t += 0.00025;
-    pts.rotation.y = t + mx * 0.035;
-    pts.rotation.x = t * 0.38 + my * 0.022;
-    renderer.render(scene, camera);
-  };
-  animate();
+  let rot = 0, raf = null, running = false;
+
+  function frame() {
+    raf = requestAnimationFrame(frame);
+    rot += 0.00045;
+    const sinY = Math.sin(rot + mx * 0.035);
+    const cosY = Math.cos(rot + mx * 0.035);
+    const tiltX = my * 0.05;
+
+    ctx.fillStyle = '#060606';
+    ctx.fillRect(0, 0, W, H);
+
+    for (let i = 0; i < N; i++) {
+      const p = parts[i];
+      /* rotate around Y, then a touch around X for life */
+      const x =  p.x * cosY - p.z * sinY;
+      let   z =  p.x * sinY + p.z * cosY;
+      const y =  p.y + z * tiltX;
+
+      /* drift particles toward the viewer, recycle when too close */
+      z -= 0.6;
+      p.z = z <= 1 ? 1900 : z;
+
+      const zz = z <= 1 ? 1900 : z;
+      const scale = FOCAL / (FOCAL + zz);
+      const sx = cx + x * scale;
+      const sy = cy + y * scale;
+      if (sx < -4 || sx > W + 4 || sy < -4 || sy > H + 4) continue;
+
+      const size = Math.max(0.4, scale * 2.1);
+      const alpha = Math.min(0.22, scale * 0.42);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#c4a35a';
+      ctx.beginPath();
+      ctx.arc(sx, sy, size, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function start() { if (!running) { running = true; raf = requestAnimationFrame(frame); } }
+  function stop()  { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
+
+  if (reduced) {
+    /* draw a single static frame, no loop */
+    rot = 0; frame(); stop();
+  } else {
+    start();
+  }
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) cancelAnimationFrame(raf);
-    else animate();
+    if (document.hidden) stop(); else if (!reduced) start();
   });
+
+  /* expose for the resilience watchdog */
+  window._bgAlive = () => running || reduced;
+  window._bgRestart = () => { if (!reduced) { stop(); seed(); start(); } };
+})();
+
+/* ════════════════════════════════════════════
+   🛡️ AD-BLOCK / CONTENT-BLOCKER RESILIENCE
+   The page already loads ZERO ad/tracker scripts
+   and renders every animation inline, so blockers
+   have nothing legitimate to remove. This watchdog
+   is a safety net: it detects when a blocker's
+   cosmetic filtering is active and re-asserts that
+   our own animations (stickman + canvas field) are
+   alive, self-healing if anything was touched.
+════════════════════════════════════════════ */
+(function initBlockerResilience() {
+  let notified = false;
+
+  /* Re-assert that our inline animations are running. */
+  function heal() {
+    /* 1) Canvas background — restart if a frame loop died. */
+    try { if (window._bgAlive && !window._bgAlive()) window._bgRestart?.(); } catch (_) {}
+
+    /* 2) Stickman — guarantee its animation classes survive. */
+    const svg = $('smSvg');
+    if (svg && !_loadingDone) {
+      svg.style.animationPlayState = 'running';
+      svg.querySelectorAll('g[class^="sm-"]').forEach(g => {
+        g.style.animationPlayState = 'running';
+      });
+    }
+
+    /* 3) Perf monitor sometimes matches generic "widget" hide rules —
+          make sure it is not force-hidden by a cosmetic filter. */
+    const pm = $('perfMon');
+    if (pm && getComputedStyle(pm).display === 'none') pm.style.display = 'flex';
+  }
+
+  /* Bait element: blockers with cosmetic filtering hide ad-named nodes.
+     We use it ONLY to detect a blocker, never to nag aggressively. */
+  function detect() {
+    const bait = document.createElement('div');
+    bait.className = 'ad-banner ads adsbox ad-placement pub_300x250 sponsor';
+    bait.setAttribute('aria-hidden', 'true');
+    bait.style.cssText =
+      'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;pointer-events:none;';
+    document.body.appendChild(bait);
+
+    requestAnimationFrame(() => {
+      const blocked =
+        !bait.offsetParent &&
+        (bait.offsetHeight === 0 || getComputedStyle(bait).display === 'none');
+      bait.remove();
+
+      heal();
+
+      if (blocked && !notified) {
+        notified = true;
+        /* Friendly, one-time, non-blocking note. Everything still works. */
+        try { window._Toast?.show('Blocker detected · animations run locally', 2200); } catch (_) {}
+      }
+    });
+  }
+
+  /* Run once shortly after load, then keep a light self-healing pulse. */
+  function boot() {
+    setTimeout(detect, 1200);
+    setInterval(heal, 4000);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot);
 })();
 
 /* ════════════════════════════════════════════
@@ -1131,6 +1355,131 @@ window._Toast = Toast;
   }
   tick();
   setInterval(tick, 1000);
+})();
+
+/* ════════════════════════════════════════════
+   🔒 PRIVATE "MY DEVICE" PANEL
+   Shows ONLY the current viewer their OWN device &
+   connection details. Everything is computed in the
+   browser; the public IP/location lookup goes
+   straight from the viewer's browser to ipwho.is and
+   is shown only to them. NOTHING is stored or sent to
+   the site owner or any third party, and no IP is
+   written into the file — so a visitor can never see
+   anyone else's IP. Opens with the "I" key or by
+   loading the page with #me in the URL.
+════════════════════════════════════════════ */
+(function initMyDevice() {
+  const overlay = $('me-overlay');
+  if (!overlay) return;
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v || '—'; };
+  let geoLoaded = false, myIp = '';
+
+  /* ---- static device facts (instant, offline) ---- */
+  function readDevice() {
+    const ua = navigator.userAgent;
+    const uad = navigator.userAgentData;
+
+    /* OS */
+    let os = 'Unknown';
+    if (uad?.platform) os = uad.platform;
+    else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
+    else if (/Windows/.test(ua)) os = 'Windows';
+    else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+    else if (/Android/.test(ua)) os = 'Android';
+    else if (/Mac OS X/.test(ua)) os = 'macOS';
+    else if (/Linux/.test(ua)) os = 'Linux';
+
+    /* Browser */
+    let brow = 'Unknown';
+    if (/Edg\//.test(ua)) brow = 'Edge';
+    else if (/OPR\/|Opera/.test(ua)) brow = 'Opera';
+    else if (/Chrome\//.test(ua)) brow = 'Chrome';
+    else if (/Firefox\//.test(ua)) brow = 'Firefox';
+    else if (/Safari\//.test(ua)) brow = 'Safari';
+
+    /* Device type */
+    const dev = uad?.mobile ? 'Mobile' :
+                /iPad|Tablet/.test(ua) ? 'Tablet' :
+                /Mobi|Android/.test(ua) ? 'Mobile' : 'Desktop';
+
+    set('meDev', dev);
+    set('meBrow', brow);
+    set('meOs', os);
+    set('meScr', `${screen.width}×${screen.height} @${(devicePixelRatio || 1).toFixed(1)}x`);
+    set('meLang', navigator.language || (navigator.languages && navigator.languages[0]) || '—');
+
+    try { set('meTz', Intl.DateTimeFormat().resolvedOptions().timeZone); } catch { set('meTz', '—'); }
+
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c) {
+      const eff = (c.effectiveType || '').toUpperCase();
+      const dl = c.downlink ? ` · ${c.downlink.toFixed(1)} Mbps` : '';
+      set('meNet', (eff || 'online') + dl);
+    } else set('meNet', navigator.onLine ? 'Online' : 'Offline');
+  }
+
+  /* ---- public IP + location (only fetched once, when first opened) ---- */
+  function loadGeo() {
+    if (geoLoaded) return;
+    geoLoaded = true;
+
+    const fill = (ip, city, region, country, isp, flag) => {
+      myIp = ip || '';
+      set('meIp', ip || 'Hidden');
+      const loc = [city, region, country].filter(Boolean).join(', ');
+      set('meLoc', (flag ? flag + ' ' : '') + (loc || 'Unknown'));
+      set('meIsp', isp || '—');
+    };
+    const fail = () => { set('meIp', 'Unavailable'); set('meLoc', '—'); set('meIsp', '—'); };
+
+    fetch('https://ipwho.is/')
+      .then(r => r.json())
+      .then(d => {
+        if (!d || d.success === false) throw 0;
+        fill(d.ip, d.city, d.region, d.country, d.connection?.isp, d.flag?.emoji);
+      })
+      .catch(() =>
+        fetch('https://ipapi.co/json/')
+          .then(r => r.json())
+          .then(d => {
+            if (!d || d.error) throw 0;
+            fill(d.ip, d.city, d.region, d.country_name, d.org);
+          })
+      )
+      .catch(() => { geoLoaded = false; fail(); });
+  }
+
+  /* ---- open / close ---- */
+  function open() {
+    readDevice();
+    loadGeo();
+    overlay.classList.add('show');
+  }
+  function close() { overlay.classList.remove('show'); }
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  $('meCopy')?.addEventListener('click', () => {
+    if (!myIp) { Toast.show('No IP to copy'); return; }
+    window._allowCopy = true;
+    navigator.clipboard?.writeText(myIp)
+      .then(() => Toast.show('Copied your IP'))
+      .catch(() => Toast.show('Copy failed', 2000, true));
+  });
+
+  /* expose so the keyboard handler can toggle it */
+  window._toggleMyDevice = () => overlay.classList.contains('show') ? close() : open();
+  window._closeMyDevice = close;
+
+  /* Private mode: only when loaded with #me, reveal a tappable button
+     (great for mobile, which has no keyboard) and auto-open once. */
+  const btn = $('meBtn');
+  if (location.hash.toLowerCase() === '#me') {
+    if (btn) btn.classList.add('show');
+    btn?.addEventListener('click', () => window._toggleMyDevice());
+    open();
+  }
 })();
 
 /* ════════════════════════════════════════════
@@ -1404,6 +1753,12 @@ setTimeout(hideLoading, 5000);
   });
 
   document.addEventListener('keydown', e => {
+    /* Close the private device panel first if it is open */
+    const meOv = $('me-overlay');
+    if (meOv && meOv.classList.contains('show')) {
+      if (e.key === 'Escape') window._closeMyDevice?.();
+      return;
+    }
     if (overlay.classList.contains('show')) {
       if (e.key === 'Escape') overlay.classList.remove('show');
       return;
@@ -1418,11 +1773,20 @@ setTimeout(hideLoading, 5000);
       case 'd': { const url = $('dmBtn').href; if (url !== 'https://discord.com') window.open(url, '_blank'); break; }
       case 'r': window._lanyardRefresh?.(); break;
       case 'p': $('perfMon').click(); break;
+      case 'i': window._toggleMyDevice?.(); break;
       case '?': toggleOverlay(); break;
     }
   });
 })();
 </script>
+
+<!-- ════ Cloudflare Web Analytics (privacy-friendly · no cookies · no per-visitor IP exposed) ════
+     SETUP: dash.cloudflare.com → Analytics & Logs → Web Analytics → Add a site
+     (ov1x.is-a.dev) → copy the token, then replace PASTE_YOUR_CLOUDFLARE_TOKEN_HERE below.
+     Note: this is the ONLY external script on the page; an ad-blocker may block it, which
+     only affects stats — every animation still runs because they are all inline. -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+  data-cf-beacon='{"token": "PASTE_YOUR_CLOUDFLARE_TOKEN_HERE"}'></script>
 
 </body>
 </html>
