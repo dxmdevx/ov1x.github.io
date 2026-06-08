@@ -1244,41 +1244,109 @@
             text-decoration: underline;
         }
 
+        /* Live Clock */
+        .live-clock {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.1rem;
+        }
+        .clock-time {
+            font-family: var(--font-mono);
+            font-size: 1.35rem;
+            font-weight: 500;
+            color: var(--white);
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+        .clock-time .colon {
+            animation: blink-colon 1s step-end infinite;
+            color: var(--gold);
+        }
+        @keyframes blink-colon {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.15; }
+        }
+        .clock-date {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--m2);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .clock-tz {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--m3);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* Code Login System */
+        .code-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(8px);
+            z-index: 1200;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .code-modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .code-modal {
+            background: rgba(8,8,8,0.97);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            width: 90%; max-width: 420px;
+            display: flex; flex-direction: column; gap: 1.25rem;
+            transform: translateY(20px);
+            transition: transform 0.35s cubic-bezier(0.25,0.8,0.25,1);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.9);
+        }
+        .code-modal-overlay.open .code-modal { transform: translateY(0); }
+        .code-modal-title {
+            font-family: var(--font-mono);
+            font-size: 0.85rem; color: var(--gold);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 0.6rem;
+        }
+        .code-input {
+            width: 100%; background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border); color: var(--white);
+            padding: 0.85rem 1rem; border-radius: var(--radius-sm);
+            font-family: var(--font-mono); font-size: 1rem;
+            letter-spacing: 0.12em; text-align: center;
+            transition: var(--transition-smooth); outline: none;
+        }
+        .code-input:focus { border-color: var(--border-hover); box-shadow: 0 0 12px rgba(196,163,90,0.12); }
+        .code-err {
+            font-family: var(--font-mono); font-size: 0.75rem;
+            color: #ef4444; text-align: center; display: none;
+        }
+        .code-user-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.3rem 0.75rem;
+            background: rgba(196,163,90,0.1);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em;
+            cursor: pointer; transition: var(--transition-smooth);
+        }
+        .code-user-badge:hover { background: var(--gold-dim); border-color: var(--border-hover); }
+        .code-user-badge.logged-out { color: var(--m2); border-color: var(--border); background: transparent; }
+
         /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 1.5rem 1rem;
-            }
-            
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1.25rem;
-            }
-
-            .header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .search-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .view-actions {
-                justify-content: space-between;
-            }
-            
-            .sort-select {
-                flex-grow: 1;
-            }
-            
-            .toast-container {
-                left: 1rem;
-                right: 1rem;
-                bottom: 1rem;
-            }
+            .container { padding: 1.5rem 1rem; }
+            header { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            .search-row { flex-direction: column; align-items: stretch; }
+            .view-actions { justify-content: space-between; }
+            .sort-select { flex-grow: 1; }
+            .toast-container { left: 1rem; right: 1rem; bottom: 1rem; }
+            .live-clock { display: none; }
         }
     </style>
 </head>
@@ -1312,12 +1380,26 @@
                 </div>
             </div>
             <div class="header-actions">
+                <!-- Live Clock -->
+                <div class="live-clock" id="liveClock">
+                    <div class="clock-time" id="clockTime">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
+                    <div class="clock-date" id="clockDate">Loading...</div>
+                    <div class="clock-tz" id="clockTz">ICT UTC+7</div>
+                </div>
+                <!-- Code User Badge -->
+                <button class="code-user-badge logged-out" id="codeUserBadge" title="Enter access code">
+                    <i class="fa-solid fa-key"></i>
+                    <span id="codeUserLabel">Enter Code</span>
+                </button>
                 <button class="btn" id="btnRefresh" title="Force reload Google Sheets data">
                     <i class="fa-solid fa-arrows-rotate"></i> Refresh
                 </button>
                 <button class="btn btn-primary" id="btnOpenGuide">
                     <i class="fa-solid fa-gear"></i> Auto-Time
                 </button>
+                <a class="btn" href="admin.html" title="Admin Panel" style="text-decoration:none;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </a>
             </div>
         </header>
 
@@ -1499,6 +1581,21 @@
     <!-- Toast Containers -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Code Login Modal -->
+    <div class="code-modal-overlay" id="codeModal">
+        <div class="code-modal">
+            <div class="code-modal-title"><i class="fa-solid fa-key"></i> Enter Access Code</div>
+            <p style="font-size:.83rem;color:var(--m1);line-height:1.55;">Enter your code to unlock features. Codes are managed by admin.</p>
+            <input class="code-input" type="password" id="codeInput" placeholder="YOUR-CODE" autocomplete="off" maxlength="32">
+            <div class="code-err" id="codeErr"><i class="fa-solid fa-xmark"></i> Invalid code</div>
+            <button class="btn btn-primary" id="btnCodeSubmit" style="padding:.8rem;"><i class="fa-solid fa-unlock"></i> Unlock</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <button class="btn" id="btnCodeLogout" style="display:none;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                <button class="btn" id="btnCodeClose" style="margin-left:auto;"><i class="fa-solid fa-xmark"></i> Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Apps Script Modal Guide -->
     <div class="modal-overlay" id="guideModal">
         <div class="modal">
@@ -1614,6 +1711,133 @@
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
+    </script>
+
+    <!-- Live Clock Script -->
+    <script>
+    (function() {
+        const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        function updateClock() {
+            // Bangkok timezone (ICT, UTC+7)
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+            const h = String(now.getHours()).padStart(2,'0');
+            const m = String(now.getMinutes()).padStart(2,'0');
+            const s = String(now.getSeconds()).padStart(2,'0');
+            const dayName = days[now.getDay()];
+            const dd = String(now.getDate()).padStart(2,'0');
+            const mon = months[now.getMonth()];
+            const yyyy = now.getFullYear();
+            const el = document.getElementById('clockTime');
+            if (el) el.innerHTML = `${h}<span class="colon">:</span>${m}<span class="colon">:</span>${s}`;
+            const de = document.getElementById('clockDate');
+            if (de) de.textContent = `${dayName}, ${dd} ${mon} ${yyyy}`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    })();
+    </script>
+
+    <!-- Code System Script -->
+    <script>
+    (function() {
+        // JSONBin config — same as admin.html
+        const API_KEY = () => localStorage.getItem('fxf_api_key') || '';
+        const BIN_ID  = () => localStorage.getItem('fxf_bin_id')  || '';
+        let currentUser = null; // { name, code, canEdit }
+        let cachedCodes = null;
+
+        const codeModal     = document.getElementById('codeModal');
+        const codeInput     = document.getElementById('codeInput');
+        const codeErr       = document.getElementById('codeErr');
+        const btnCodeSubmit = document.getElementById('btnCodeSubmit');
+        const btnCodeClose  = document.getElementById('btnCodeClose');
+        const btnCodeLogout = document.getElementById('btnCodeLogout');
+        const codeUserBadge = document.getElementById('codeUserBadge');
+        const codeUserLabel = document.getElementById('codeUserLabel');
+
+        // Open modal
+        codeUserBadge.addEventListener('click', () => {
+            codeModal.classList.add('open');
+            codeErr.style.display = 'none';
+            if (currentUser) {
+                codeInput.style.display = 'none';
+                btnCodeSubmit.style.display = 'none';
+                btnCodeLogout.style.display = 'inline-flex';
+            } else {
+                codeInput.style.display = 'block';
+                btnCodeSubmit.style.display = 'flex';
+                btnCodeLogout.style.display = 'none';
+                setTimeout(()=> codeInput.focus(), 100);
+            }
+        });
+
+        btnCodeClose.addEventListener('click', () => codeModal.classList.remove('open'));
+        codeModal.addEventListener('click', e => { if(e.target === codeModal) codeModal.classList.remove('open'); });
+        codeInput.addEventListener('keydown', e => { if(e.key==='Enter') submitCode(); });
+        btnCodeSubmit.addEventListener('click', submitCode);
+        btnCodeLogout.addEventListener('click', doLogout);
+
+        async function submitCode() {
+            const val = codeInput.value.trim();
+            if (!val) return;
+            btnCodeSubmit.innerHTML = '<i class="fa-solid fa-circle-notch" style="animation:spin-animation 1s linear infinite"></i> Checking...';
+            btnCodeSubmit.disabled = true;
+            try {
+                const codes = await loadCodes();
+                const found = codes.find(c => c.code === val);
+                if (found) {
+                    currentUser = found;
+                    codeModal.classList.remove('open');
+                    codeUserBadge.classList.remove('logged-out');
+                    codeUserLabel.textContent = found.name;
+                    codeInput.value = '';
+                    codeErr.style.display = 'none';
+                    dispatchUserEvent();
+                } else {
+                    codeErr.style.display = 'block';
+                    codeInput.value = '';
+                    codeInput.focus();
+                }
+            } catch(e) {
+                codeErr.style.display = 'block';
+                codeErr.innerHTML = '<i class="fa-solid fa-xmark"></i> Network error — check JSONBin config in admin';
+            } finally {
+                btnCodeSubmit.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock';
+                btnCodeSubmit.disabled = false;
+            }
+        }
+
+        function doLogout() {
+            currentUser = null;
+            codeUserBadge.classList.add('logged-out');
+            codeUserLabel.textContent = 'Enter Code';
+            codeModal.classList.remove('open');
+            dispatchUserEvent();
+        }
+
+        async function loadCodes() {
+            if (cachedCodes) return cachedCodes;
+            const k = API_KEY(); const b = BIN_ID();
+            if (!k || !b) return [];
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${b}/latest`, {
+                headers: { 'X-Master-Key': k }
+            });
+            if (!res.ok) throw new Error('fetch fail');
+            const data = await res.json();
+            cachedCodes = data.record.codes || [];
+            setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
+            return cachedCodes;
+        }
+
+        function dispatchUserEvent() {
+            window._fxfUser = currentUser;
+            window.dispatchEvent(new CustomEvent('fxf-user-change', { detail: currentUser }));
+        }
+
+        window._fxfUser = null;
+        window._fxfGetUser = () => currentUser;
+    })();
     </script>
 
     <!-- App Logic -->
