@@ -146,13 +146,20 @@ input:checked + .slider::before { transform:translateX(20px); background:var(--g
         <br><br>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
             <div>
-                <div class="field-label">JSONBin API Key (X-Master-Key)</div>
+                <div class="field-label">JSONBin Key</div>
                 <input type="text" id="cfgApiKey" placeholder="$2a$10$...">
             </div>
             <div>
                 <div class="field-label">Bin ID</div>
                 <input type="text" id="cfgBinId" placeholder="64abc123...">
             </div>
+        </div>
+        <div style="margin-top:.75rem;">
+            <div class="field-label">Key Type</div>
+            <select id="cfgKeyType" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--white);padding:.75rem 1rem;border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:.9rem;outline:none;">
+                <option value="master">Core API Key (X-Master-Key)</option>
+                <option value="access">Access Key (X-Access-Key)</option>
+            </select>
         </div>
         <button class="btn btn-sm" id="btnSaveCfg" style="margin-top:.75rem;"><i class="fa-solid fa-floppy-disk"></i> Save Config</button>
         <span id="cfgStatus" style="font-family:var(--font-mono);font-size:.72rem;color:var(--m2);margin-left:.75rem;"></span>
@@ -201,6 +208,7 @@ const MASTER_PASS = 'fxf-admin-2026';
 
 let API_KEY = localStorage.getItem('fxf_api_key') || '';
 let BIN_ID  = localStorage.getItem('fxf_bin_id')  || '';
+let KEY_TYPE = localStorage.getItem('fxf_key_type') || 'master';
 
 // ===== LOGIN =====
 document.getElementById('masterInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -230,26 +238,73 @@ document.getElementById('btnLogout').addEventListener('click', () => {
 function loadCfgFromStorage() {
     document.getElementById('cfgApiKey').value = API_KEY;
     document.getElementById('cfgBinId').value  = BIN_ID;
+    document.getElementById('cfgKeyType').value = KEY_TYPE;
 }
 
-document.getElementById('btnSaveCfg').addEventListener('click', () => {
-    API_KEY = document.getElementById('cfgApiKey').value.trim();
-    BIN_ID  = document.getElementById('cfgBinId').value.trim();
+document.getElementById('btnSaveCfg').addEventListener('click', async () => {
+    API_KEY = normalizeInput(document.getElementById('cfgApiKey').value);
+    BIN_ID  = normalizeInput(document.getElementById('cfgBinId').value);
+    KEY_TYPE = document.getElementById('cfgKeyType').value;
     localStorage.setItem('fxf_api_key', API_KEY);
     localStorage.setItem('fxf_bin_id',  BIN_ID);
-    document.getElementById('cfgStatus').textContent = '✓ Saved!';
-    setTimeout(()=> document.getElementById('cfgStatus').textContent = '', 2000);
-    fetchCodes();
+    localStorage.setItem('fxf_key_type', KEY_TYPE);
+    document.getElementById('cfgApiKey').value = API_KEY;
+    document.getElementById('cfgBinId').value = BIN_ID;
+
+    const btn = document.getElementById('btnSaveCfg');
+    const status = document.getElementById('cfgStatus');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch loading-spin"></i> Testing...';
+    status.style.color = 'var(--m2)';
+    status.textContent = 'Testing JSONBin...';
+    try {
+        await fetchCodes(true);
+        status.style.color = 'var(--green)';
+        status.textContent = 'Saved and connected!';
+        setTimeout(()=> status.textContent = '', 2500);
+    } catch(e) {
+        status.style.color = 'var(--red)';
+        status.textContent = e.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Config';
+    }
 });
 
 // ===== JSONBIN API =====
-const headers = () => ({
-    'Content-Type': 'application/json',
-    'X-Master-Key': API_KEY,
-    'X-Bin-Versioning': 'false'
-});
+const headers = () => {
+    const authHeader = KEY_TYPE === 'access' ? 'X-Access-Key' : 'X-Master-Key';
+    return {
+        'Content-Type': 'application/json',
+        [authHeader]: API_KEY,
+        'X-Bin-Versioning': 'false'
+    };
+};
 
-async function fetchCodes() {
+function normalizeInput(value) {
+    return String(value || '')
+        .trim()
+        .replace(/^["'`]+|["'`]+$/g, '')
+        .replace(/^X-(Master|Access)-Key\s*:\s*/i, '');
+}
+
+async function parseJsonBinError(res) {
+    let detail = '';
+    try {
+        const data = await res.clone().json();
+        detail = data.message ? ` (${data.message})` : '';
+    } catch (_) {}
+
+    if (res.status === 401) {
+        const header = KEY_TYPE === 'access' ? 'X-Access-Key' : 'X-Master-Key';
+        return `Unauthorized 401: check the key and Key Type (${header}).${detail}`;
+    }
+    if (res.status === 404) return `Bin not found 404: check the Bin ID.${detail}`;
+    if (res.status === 403) return `Forbidden 403: this key cannot access/update this bin.${detail}`;
+    return `Fetch failed: ${res.status}${detail}`;
+}
+
+async function fetchCodes(shouldThrow = false) {
     if (!API_KEY || !BIN_ID) {
         document.getElementById('codeList').innerHTML = '<div class="empty-list">⚠️ Set your JSONBin API Key and Bin ID above first.</div>';
         return;
@@ -257,11 +312,12 @@ async function fetchCodes() {
     document.getElementById('codeList').innerHTML = '<div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading...</div>';
     try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: headers() });
-        if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+        if (!res.ok) throw new Error(await parseJsonBinError(res));
         const data = await res.json();
         renderCodes(data.record.codes || []);
     } catch(e) {
         document.getElementById('codeList').innerHTML = `<div class="empty-list">❌ Error: ${e.message}</div>`;
+        if (shouldThrow) throw e;
     }
 }
 
@@ -271,7 +327,7 @@ async function saveCodes(codes) {
         headers: headers(),
         body: JSON.stringify({ codes })
     });
-    if (!res.ok) throw new Error('Save failed: ' + res.status);
+    if (!res.ok) throw new Error(await parseJsonBinError(res));
     return res.json();
 }
 
@@ -353,7 +409,7 @@ async function deleteCode(idx) {
 
 async function getCurrentCodes() {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: headers() });
-    if (!res.ok) throw new Error('Fetch failed');
+    if (!res.ok) throw new Error(await parseJsonBinError(res));
     const data = await res.json();
     return data.record.codes || [];
 }
