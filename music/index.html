@@ -412,6 +412,18 @@
             box-shadow: 0 0 15px rgba(196, 163, 90, 0.3);
         }
 
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.24);
+            color: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.16);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #f87171;
+        }
+
         .spin {
             animation: spin-animation 1s linear infinite;
         }
@@ -826,6 +838,8 @@
         .copy-actions {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .btn-copy-lua {
@@ -860,6 +874,58 @@
             color: var(--bg) !important;
             border-color: var(--gold) !important;
             box-shadow: 0 0 10px rgba(196, 163, 90, 0.3);
+        }
+
+        .btn-edit-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border);
+            color: var(--m1);
+        }
+
+        .btn-edit-track:hover {
+            color: var(--gold-b);
+            border-color: var(--border-hover);
+        }
+
+        .edit-form {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .edit-form label {
+            display: grid;
+            gap: 0.4rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--m1);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .edit-form input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            color: var(--white);
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .edit-form input:focus {
+            border-color: var(--border-hover);
+            box-shadow: 0 0 12px rgba(196, 163, 90, 0.12);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.25rem;
         }
 
         /* Song Table View */
@@ -1394,8 +1460,11 @@
                 <button class="btn" id="btnRefresh" title="Force reload Google Sheets data">
                     <i class="fa-solid fa-arrows-rotate"></i> Refresh
                 </button>
+                <button class="btn btn-primary" id="btnAddTrack" title="Add a track to Google Sheet">
+                    <i class="fa-solid fa-plus"></i> Add
+                </button>
                 <button class="btn btn-primary" id="btnOpenGuide">
-                    <i class="fa-solid fa-gear"></i> Auto-Time
+                    <i class="fa-solid fa-gear"></i> Sheet API
                 </button>
                 <a class="btn" href="admin.html" title="Admin Panel" style="text-decoration:none;">
                     <i class="fa-solid fa-shield-halved"></i>
@@ -1600,33 +1669,103 @@
     <div class="modal-overlay" id="guideModal">
         <div class="modal">
             <button class="modal-close" id="btnCloseGuide"><i class="fa-solid fa-xmark"></i></button>
-            <h2 class="modal-title">Setup Automatic Timestamps</h2>
+            <h2 class="modal-title">Setup Sheet Editing</h2>
             <div class="modal-content">
-                <p>To automatically fill the <strong>"Auto time update"</strong> column when you add or modify rows in Google Sheets, follow these simple steps:</p>
+                <p>Deploy this Google Apps Script as a Web App, then paste the Web App URL below. The site uses it to add, update, and delete rows after a valid code is entered.</p>
+                <div class="edit-form">
+                    <label>
+                        Google Apps Script Web App URL
+                        <input type="text" id="sheetApiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+                    </label>
+                    <button class="btn btn-primary" id="btnSaveSheetApi" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Sheet API URL</button>
+                </div>
                 <ol>
                     <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank" style="color: var(--gold);">Open Spreadsheet</a>.</li>
                     <li>In the top menu, select <strong>Extensions</strong> &gt; <strong>Apps Script</strong>.</li>
-                    <li>Delete any code in the editor and paste the script below:</li>
+                    <li>Delete any code in the editor and paste the script below.</li>
+                    <li>Deploy as a <strong>Web app</strong>, set access to <strong>Anyone</strong>, then copy the Web App URL.</li>
                 </ol>
                 <div class="code-block-wrapper">
                     <button class="btn-copy-code" id="btnCopyAppsScriptCode"><i class="fa-solid fa-copy"></i> Copy Script</button>
-                    <pre><code id="appsScriptCode" style="color: var(--white); max-height: 200px;">function onEdit(e) {
-  var sheet = e.source.getActiveSheet();
-  var range = e.range;
-  
-  // Exclude header row (Row 1)
-  if (range.getRow() > 1) {
-    // Set Column D (Column 4: Auto time update)
-    // of the edited row to the current date and time
-    sheet.getRange(range.getRow(), 4).setValue(new Date());
+                    <pre><code id="appsScriptCode" style="color: var(--white); max-height: 260px;">function doPost(e) {
+  var body = JSON.parse((e.postData && e.postData.contents) || '{}');
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var action = String(body.action || '').toLowerCase();
+  var song = body.song || {};
+  var rowNumber = Number(body.rowNumber || 0);
+
+  if (!body.code) return reply({ ok: false, error: 'Missing access code' });
+  if (!action) return reply({ ok: false, error: 'Missing action' });
+
+  var id = String(song.id || '').trim();
+  var name = String(song.name || '').trim();
+  var category = String(song.category || '').trim();
+  var now = new Date();
+
+  if (action === 'add') {
+    if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+    sheet.appendRow([id, name, category, now]);
+    return reply({ ok: true });
   }
+
+  if (action === 'update') {
+    if (rowNumber < 2) return reply({ ok: false, error: 'Invalid row number' });
+    if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+    sheet.getRange(rowNumber, 1, 1, 4).setValues([[id, name, category, now]]);
+    return reply({ ok: true });
+  }
+
+  if (action === 'delete') {
+    if (rowNumber < 2) return reply({ ok: false, error: 'Invalid row number' });
+    sheet.deleteRow(rowNumber);
+    return reply({ ok: true });
+  }
+
+  return reply({ ok: false, error: 'Unknown action' });
+}
+
+function reply(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }</code></pre>
                 </div>
-                <h3>Why do this?</h3>
-                <p>This Apps Script captures the exact timestamp whenever you modify records in the sheet, allowing this hub to sort and filter by "Recently Updated" and display the correct "Last Updated" status badge.</p>
+                <h3>Sheet Columns</h3>
+                <p>Use columns A-D as <strong>ID</strong>, <strong>Name</strong>, <strong>Category</strong>, and <strong>Auto time update</strong>. Row 1 can be headers.</p>
                 <button class="btn btn-primary" id="btnGotIt" style="width: 100%; margin-top: 0.5rem;">
                     Done, I got it!
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Track Edit Modal -->
+    <div class="modal-overlay" id="trackModal">
+        <div class="modal">
+            <button class="modal-close" id="btnCloseTrackModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="modal-title" id="trackModalTitle">Add Track</h2>
+            <div class="modal-content">
+                <div class="edit-form">
+                    <label>
+                        Asset ID
+                        <input type="text" id="trackIdInput" placeholder="1098462719">
+                    </label>
+                    <label>
+                        Name
+                        <input type="text" id="trackNameInput" placeholder="Track title">
+                    </label>
+                    <label>
+                        Category
+                        <input type="text" id="trackCategoryInput" placeholder="Chipeo">
+                    </label>
+                    <div class="edit-actions">
+                        <button class="btn btn-danger" id="btnDeleteTrack" style="display:none;"><i class="fa-solid fa-trash"></i> Delete</button>
+                        <div style="display:flex;gap:.75rem;margin-left:auto;">
+                            <button class="btn" id="btnCancelTrack"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                            <button class="btn btn-primary" id="btnSaveTrack"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1848,18 +1987,24 @@
         let allSongs = [];
         let filteredSongs = [];
         let isUsingDemoData = false;
+        let currentEditor = null;
+        let editingRowNumber = null;
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/gviz/tq?tqx=out:json';
+        let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || '';
 
         // Elements
         const connBadge = document.getElementById('connBadge');
         const connStatusText = document.getElementById('connStatusText');
         const btnRefresh = document.getElementById('btnRefresh');
+        const btnAddTrack = document.getElementById('btnAddTrack');
         const btnOpenGuide = document.getElementById('btnOpenGuide');
         const btnCloseGuide = document.getElementById('btnCloseGuide');
         const btnGotIt = document.getElementById('btnGotIt');
         const guideModal = document.getElementById('guideModal');
         const btnCopyAppsScriptCode = document.getElementById('btnCopyAppsScriptCode');
         const appsScriptCodeText = document.getElementById('appsScriptCode');
+        const sheetApiUrlInput = document.getElementById('sheetApiUrlInput');
+        const btnSaveSheetApi = document.getElementById('btnSaveSheetApi');
 
         const statTotalTracks = document.getElementById('statTotalTracks');
         const statCategories = document.getElementById('statCategories');
@@ -1887,6 +2032,15 @@
         const filteredCount = document.getElementById('filteredCount');
 
         const toastContainer = document.getElementById('toastContainer');
+        const trackModal = document.getElementById('trackModal');
+        const trackModalTitle = document.getElementById('trackModalTitle');
+        const btnCloseTrackModal = document.getElementById('btnCloseTrackModal');
+        const btnCancelTrack = document.getElementById('btnCancelTrack');
+        const btnSaveTrack = document.getElementById('btnSaveTrack');
+        const btnDeleteTrack = document.getElementById('btnDeleteTrack');
+        const trackIdInput = document.getElementById('trackIdInput');
+        const trackNameInput = document.getElementById('trackNameInput');
+        const trackCategoryInput = document.getElementById('trackCategoryInput');
 
         // Config variables
         let currentView = 'grid'; // 'grid' | 'table'
@@ -1918,6 +2072,17 @@
             btnRefresh.addEventListener('click', () => {
                 btnRefresh.querySelector('i').classList.add('spin');
                 loadSheetData();
+            });
+
+            btnAddTrack.addEventListener('click', () => {
+                if (!requireEditor()) return;
+                openTrackModal();
+            });
+
+            window.addEventListener('fxf-user-change', (e) => {
+                currentEditor = e.detail;
+                updateEditState();
+                filterAndRender();
             });
 
             // View toggles
@@ -1974,6 +2139,21 @@
                 }, 2000);
             });
 
+            sheetApiUrlInput.value = SHEET_API_URL;
+            btnSaveSheetApi.addEventListener('click', () => {
+                SHEET_API_URL = sheetApiUrlInput.value.trim();
+                localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
+                showToast("Sheet API URL saved.", "success");
+            });
+
+            btnCloseTrackModal.addEventListener('click', closeTrackModal);
+            btnCancelTrack.addEventListener('click', closeTrackModal);
+            trackModal.addEventListener('click', (e) => {
+                if (e.target === trackModal) closeTrackModal();
+            });
+            btnSaveTrack.addEventListener('click', saveTrackFromModal);
+            btnDeleteTrack.addEventListener('click', deleteTrackFromModal);
+
             // Load Demo button
             btnLoadDemo.addEventListener('click', () => {
                 isUsingDemoData = true;
@@ -1985,6 +2165,9 @@
             btnCopyAllFiltered.addEventListener('click', () => {
                 copyAllFiltered();
             });
+
+            currentEditor = window._fxfGetUser ? window._fxfGetUser() : null;
+            updateEditState();
         }
 
         // View Mode Switcher
@@ -2009,7 +2192,7 @@
             updateBadgeStatus('connecting', 'Connecting...');
             
             try {
-                const response = await fetch(SHEET_CSV_URL);
+                const response = await fetch(`${SHEET_CSV_URL}&_=${Date.now()}`);
                 if (!response.ok) throw new Error('Network response error');
                 
                 const text = await response.text();
@@ -2044,7 +2227,7 @@
                     const lastUpdated = cells[3] ? (cells[3].f || cells[3].v || '') : '';
                     
                     if (id || name || category) {
-                        parsedSongs.push({ id, name, category, lastUpdated });
+                        parsedSongs.push({ id, name, category, lastUpdated, rowNumber: i + 1 });
                     }
                 }
 
@@ -2308,6 +2491,10 @@
                             <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)">
                                 <i class="fa-solid fa-copy"></i> Copy Lua
                             </button>
+                            ${canEditSheet() ? `
+                            <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByRow(${song.rowNumber})">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>` : ''}
                         </div>
                     </div>
                 `;
@@ -2362,11 +2549,124 @@
                         <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)" style="padding: 0.35rem 0.65rem;">
                             <i class="fa-solid fa-copy"></i> Lua
                         </button>
+                        ${canEditSheet() ? `
+                        <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByRow(${song.rowNumber})" style="padding: 0.35rem 0.65rem;margin-left:.35rem;">
+                            <i class="fa-solid fa-pen"></i> Edit
+                        </button>` : ''}
                     </td>
                 `;
                 
                 songsTableBody.appendChild(tr);
             });
+        }
+
+        function canEditSheet() {
+            return !!currentEditor;
+        }
+
+        function requireEditor() {
+            if (canEditSheet()) return true;
+            showToast("Enter an access code before editing.", "error");
+            const badge = document.getElementById('codeUserBadge');
+            if (badge) badge.click();
+            return false;
+        }
+
+        function updateEditState() {
+            if (!btnAddTrack) return;
+            btnAddTrack.style.opacity = canEditSheet() ? '1' : '0.55';
+            btnAddTrack.title = canEditSheet() ? 'Add a track to Google Sheet' : 'Enter access code to add tracks';
+        }
+
+        function openTrackModalByRow(rowNumber) {
+            if (!requireEditor()) return;
+            const song = allSongs.find(s => Number(s.rowNumber) === Number(rowNumber));
+            if (!song) {
+                showToast("Track row not found. Refresh and try again.", "error");
+                return;
+            }
+            openTrackModal(song);
+        }
+
+        function openTrackModal(song = null) {
+            editingRowNumber = song ? song.rowNumber : null;
+            trackModalTitle.innerText = song ? 'Edit Track' : 'Add Track';
+            trackIdInput.value = song ? song.id : '';
+            trackNameInput.value = song ? song.name : '';
+            trackCategoryInput.value = song ? song.category : '';
+            btnDeleteTrack.style.display = song ? 'inline-flex' : 'none';
+            trackModal.classList.add('open');
+            setTimeout(() => trackIdInput.focus(), 80);
+        }
+
+        function closeTrackModal() {
+            trackModal.classList.remove('open');
+            editingRowNumber = null;
+        }
+
+        async function saveTrackFromModal() {
+            if (!requireEditor()) return;
+            const song = {
+                id: trackIdInput.value.trim(),
+                name: trackNameInput.value.trim(),
+                category: trackCategoryInput.value.trim()
+            };
+            if (!song.id || !song.name) {
+                showToast("ID and Name are required.", "error");
+                return;
+            }
+
+            const action = editingRowNumber ? 'update' : 'add';
+            await writeSheet(action, { song, rowNumber: editingRowNumber });
+        }
+
+        async function deleteTrackFromModal() {
+            if (!requireEditor() || !editingRowNumber) return;
+            if (!confirm('Delete this track from Google Sheet?')) return;
+            await writeSheet('delete', { rowNumber: editingRowNumber });
+        }
+
+        async function writeSheet(action, payload) {
+            if (!SHEET_API_URL) {
+                showToast("Set the Sheet API URL first.", "error");
+                sheetApiUrlInput.value = SHEET_API_URL;
+                guideModal.classList.add('open');
+                return;
+            }
+
+            const btn = action === 'delete' ? btnDeleteTrack : btnSaveTrack;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Saving...';
+
+            try {
+                const response = await fetch(SHEET_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action,
+                        rowNumber: payload.rowNumber || null,
+                        song: payload.song || null,
+                        code: currentEditor.code,
+                        user: currentEditor.name
+                    })
+                });
+
+                const text = await response.text();
+                let result = {};
+                try { result = JSON.parse(text); } catch (_) {}
+                if (!response.ok || result.ok === false) {
+                    throw new Error(result.error || `Sheet API failed: ${response.status}`);
+                }
+
+                closeTrackModal();
+                showToast(action === 'delete' ? "Track deleted from sheet." : "Track saved to sheet.", "success");
+                await loadSheetData();
+            } catch (err) {
+                showToast("Sheet update failed: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
 
         // Render Code Preview Window at the bottom
@@ -2601,6 +2901,5 @@
                 .replace(/\n/g, '\\n');
         }
     </script>
-    
 </body>
 </html>
