@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FXF Admin — Code Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --gold: #c4a35a; --gold-b: #d4b86a;
+    --gold-dim: rgba(196,163,90,0.18); --gold-sub: rgba(196,163,90,0.07);
+    --bg: #060606; --card: rgba(10,10,10,0.95);
+    --border: rgba(196,163,90,0.13); --border-hover: rgba(196,163,90,0.35);
+    --white: #f0ece4; --m1: rgba(240,236,228,0.45); --m2: rgba(240,236,228,0.20);
+    --red: #ef4444; --green: #22c55e;
+    --font-sans: 'Outfit', sans-serif; --font-mono: 'DM Mono', monospace;
+    --radius-lg: 20px; --radius-md: 12px; --radius-sm: 8px;
+    --transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--white); font-family: var(--font-sans); min-height: 100vh; }
+body::before {
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.04;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size:200px; mix-blend-mode:overlay;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+
+/* Login screen */
+#loginScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:1.5rem; }
+.login-box { background: rgba(10,10,10,0.95); border:1px solid var(--border); border-radius: var(--radius-lg); padding:2.5rem; width:100%; max-width:420px; display:flex; flex-direction:column; gap:1.25rem; }
+.login-box h1 { font-family: var(--font-mono); font-size:1rem; color: var(--gold); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.6rem; }
+.login-box p { font-size:.85rem; color: var(--m1); }
+.field-label { font-family: var(--font-mono); font-size:.72rem; color: var(--m1); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem; }
+input[type=text], input[type=password] {
+    width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:var(--white);
+    padding:.75rem 1rem; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:.9rem;
+    transition:var(--transition); outline:none;
+}
+input:focus { border-color:var(--border-hover); box-shadow:0 0 10px rgba(196,163,90,.1); }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+    background:var(--gold-sub); border:1px solid var(--border); color:var(--gold);
+    padding:.65rem 1.25rem; border-radius:var(--radius-sm); font-family:var(--font-mono);
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:var(--transition); }
+.btn:hover { background:var(--gold-dim); border-color:var(--border-hover); }
+.btn-primary { background:var(--gold); border-color:var(--gold); color:var(--bg); font-weight:600; width:100%; padding:.8rem; }
+.btn-primary:hover { background:var(--gold-b); border-color:var(--gold-b); box-shadow:0 0 15px rgba(196,163,90,.3); }
+.btn-danger { background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.25); color:var(--red); }
+.btn-danger:hover { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.5); }
+.btn-sm { padding:.35rem .75rem; font-size:.72rem; }
+.err-msg { color:var(--red); font-size:.8rem; font-family:var(--font-mono); display:none; }
+
+/* Main admin */
+#adminPanel { display:none; }
+.admin-header { display:flex; align-items:center; justify-content:space-between; padding:1.5rem 0; border-bottom:1px solid var(--border); margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+.admin-header h1 { font-family:var(--font-mono); font-size:.9rem; color:var(--m1); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.5rem; }
+.admin-header h1 span { color:var(--gold); }
+
+.section-title { font-family:var(--font-mono); font-size:.75rem; color:var(--m1); text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* Add code form */
+.add-form { background:rgba(10,10,10,.9); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.75rem; margin-bottom:2rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+@media(max-width:580px){ .form-grid { grid-template-columns:1fr; } }
+.toggle-row { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+.toggle-label { font-family:var(--font-mono); font-size:.78rem; color:var(--m1); text-transform:uppercase; letter-spacing:.04em; }
+.toggle { position:relative; display:inline-block; width:44px; height:24px; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; inset:0; background:rgba(255,255,255,.1); border:1px solid var(--border); border-radius:12px; cursor:pointer; transition:var(--transition); }
+.slider::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:var(--m2); border-radius:50%; transition:var(--transition); }
+input:checked + .slider { background:rgba(196,163,90,.2); border-color:var(--gold); }
+input:checked + .slider::before { transform:translateX(20px); background:var(--gold); }
+
+/* Code list */
+.code-list { display:flex; flex-direction:column; gap:.75rem; }
+.code-item { background:rgba(10,10,10,.9); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.1rem 1.4rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; transition:var(--transition); }
+.code-item:hover { border-color:var(--border-hover); }
+.code-info { display:flex; flex-direction:column; gap:.3rem; }
+.code-name { font-weight:600; font-size:.95rem; }
+.code-value { font-family:var(--font-mono); font-size:.78rem; color:var(--gold); background:var(--gold-sub); border:1px solid var(--border); padding:.15rem .5rem; border-radius:4px; display:inline-block; }
+.code-perms { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.25rem; }
+.perm-badge { font-family:var(--font-mono); font-size:.68rem; padding:.15rem .5rem; border-radius:4px; text-transform:uppercase; letter-spacing:.04em; }
+.perm-yes { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25); color:var(--green); }
+.perm-no { background:rgba(255,255,255,.04); border:1px solid var(--border); color:var(--m2); }
+.code-actions { display:flex; gap:.5rem; }
+
+.status-bar { font-family:var(--font-mono); font-size:.75rem; color:var(--m2); text-align:center; padding:.75rem; }
+.loading-spin { display:inline-block; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Setup hint */
+.setup-hint { background:rgba(196,163,90,.05); border:1px solid rgba(196,163,90,.15); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem; font-size:.83rem; line-height:1.6; color:var(--m1); }
+.setup-hint strong { color:var(--gold); }
+.setup-hint code { background:rgba(0,0,0,.4); padding:.1rem .35rem; border-radius:3px; font-family:var(--font-mono); font-size:.78rem; color:var(--gold-b); }
+
+.empty-list { text-align:center; padding:2.5rem; color:var(--m2); font-family:var(--font-mono); font-size:.8rem; }
+.back-link { color:var(--gold); font-family:var(--font-mono); font-size:.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:.4rem; transition:var(--transition); }
+.back-link:hover { color:var(--gold-b); }
+
+/* Toast */
+.toast-c { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.6rem; z-index:999; }
+.toast { background:rgba(10,10,10,.98); border:1px solid var(--border); color:var(--white); padding:.85rem 1.1rem; border-radius:var(--radius-md); display:flex; align-items:center; gap:.6rem; font-size:.83rem; min-width:240px; animation:slide-up .35s forwards; }
+.toast.ok { border-color:var(--gold); }
+.toast.ok i { color:var(--gold); }
+.toast.fail { border-color:rgba(239,68,68,.4); }
+.toast.fail i { color:var(--red); }
+@keyframes slide-up { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h1><i class="fa-solid fa-shield-halved"></i> FXF Admin</h1>
+        <p>Enter master admin password to manage access codes.</p>
+        <div>
+            <div class="field-label">Master Password</div>
+            <input type="password" id="masterInput" placeholder="Enter master password..." autocomplete="off">
+        </div>
+        <div class="err-msg" id="loginErr"><i class="fa-solid fa-xmark"></i> Wrong password</div>
+        <button class="btn btn-primary" id="btnLogin"><i class="fa-solid fa-unlock"></i> Unlock Admin</button>
+        <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to main page</a>
+    </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="adminPanel">
+<div class="wrap">
+    <div class="admin-header">
+        <h1><i class="fa-solid fa-shield-halved" style="color:var(--gold)"></i> FXF Admin <span>/ Code Manager</span></h1>
+        <div style="display:flex;gap:.75rem;align-items:center;">
+            <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Main Page</a>
+            <button class="btn btn-sm" id="btnLogout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </div>
+
+    <!-- JSONBin Setup -->
+    <div class="setup-hint" id="setupHint">
+        <strong>⚙️ First-time setup:</strong> This system stores codes on <strong>JSONBin.io</strong> (free).
+        Fill in your <code>API Key</code> and <code>Bin ID</code> below and click Save Config. 
+        Get them free at <strong>jsonbin.io</strong> → sign up → create a Bin → copy the Bin ID and API Key.
+        <br><br>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+            <div>
+                <div class="field-label">JSONBin API Key (X-Master-Key)</div>
+                <input type="text" id="cfgApiKey" placeholder="$2a$10$...">
+            </div>
+            <div>
+                <div class="field-label">Bin ID</div>
+                <input type="text" id="cfgBinId" placeholder="64abc123...">
+            </div>
+        </div>
+        <button class="btn btn-sm" id="btnSaveCfg" style="margin-top:.75rem;"><i class="fa-solid fa-floppy-disk"></i> Save Config</button>
+        <span id="cfgStatus" style="font-family:var(--font-mono);font-size:.72rem;color:var(--m2);margin-left:.75rem;"></span>
+    </div>
+
+    <!-- Add Code Form -->
+    <div class="add-form">
+        <div class="section-title"><i class="fa-solid fa-plus" style="color:var(--gold)"></i> Add New Code</div>
+        <div class="form-grid">
+            <div>
+                <div class="field-label">Display Name</div>
+                <input type="text" id="newName" placeholder="e.g. DJ Admin">
+            </div>
+            <div>
+                <div class="field-label">Access Code</div>
+                <input type="text" id="newCode" placeholder="e.g. FXF-2026" autocomplete="off">
+            </div>
+        </div>
+        <div class="toggle-row">
+            <label class="toggle">
+                <input type="checkbox" id="newCanEdit">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Can edit / delete others' entries</span>
+        </div>
+        <button class="btn btn-primary" id="btnAddCode" style="width:auto;padding:.65rem 1.5rem;">
+            <i class="fa-solid fa-plus"></i> Add Code
+        </button>
+    </div>
+
+    <!-- Code List -->
+    <div class="section-title"><i class="fa-solid fa-key" style="color:var(--gold)"></i> Active Codes</div>
+    <div id="codeList" class="code-list">
+        <div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading codes...</div>
+    </div>
+    <div class="status-bar" id="statusBar"></div>
+</div>
+</div>
+
+<div class="toast-c" id="toastC"></div>
+
+<script>
+// ===== CONFIG =====
+// Change this master password here:
+const MASTER_PASS = 'fxf-admin-2026';
+
+let API_KEY = localStorage.getItem('fxf_api_key') || '';
+let BIN_ID  = localStorage.getItem('fxf_bin_id')  || '';
+
+// ===== LOGIN =====
+document.getElementById('masterInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('btnLogin').addEventListener('click', doLogin);
+
+function doLogin() {
+    const val = document.getElementById('masterInput').value;
+    if (val === MASTER_PASS) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadCfgFromStorage();
+        fetchCodes();
+    } else {
+        const err = document.getElementById('loginErr');
+        err.style.display = 'block';
+        setTimeout(()=> err.style.display='none', 3000);
+    }
+}
+
+document.getElementById('btnLogout').addEventListener('click', () => {
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('masterInput').value = '';
+});
+
+// ===== CONFIG =====
+function loadCfgFromStorage() {
+    document.getElementById('cfgApiKey').value = API_KEY;
+    document.getElementById('cfgBinId').value  = BIN_ID;
+}
+
+document.getElementById('btnSaveCfg').addEventListener('click', () => {
+    API_KEY = document.getElementById('cfgApiKey').value.trim();
+    BIN_ID  = document.getElementById('cfgBinId').value.trim();
+    localStorage.setItem('fxf_api_key', API_KEY);
+    localStorage.setItem('fxf_bin_id',  BIN_ID);
+    document.getElementById('cfgStatus').textContent = '✓ Saved!';
+    setTimeout(()=> document.getElementById('cfgStatus').textContent = '', 2000);
+    fetchCodes();
+});
+
+// ===== JSONBIN API =====
+const headers = () => ({
+    'Content-Type': 'application/json',
+    'X-Master-Key': API_KEY,
+    'X-Bin-Versioning': 'false'
+});
+
+async function fetchCodes() {
+    if (!API_KEY || !BIN_ID) {
+        document.getElementById('codeList').innerHTML = '<div class="empty-list">⚠️ Set your JSONBin API Key and Bin ID above first.</div>';
+        return;
+    }
+    document.getElementById('codeList').innerHTML = '<div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading...</div>';
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: headers() });
+        if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+        const data = await res.json();
+        renderCodes(data.record.codes || []);
+    } catch(e) {
+        document.getElementById('codeList').innerHTML = `<div class="empty-list">❌ Error: ${e.message}</div>`;
+    }
+}
+
+async function saveCodes(codes) {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ codes })
+    });
+    if (!res.ok) throw new Error('Save failed: ' + res.status);
+    return res.json();
+}
+
+// ===== RENDER =====
+function renderCodes(codes) {
+    const list = document.getElementById('codeList');
+    if (!codes.length) {
+        list.innerHTML = '<div class="empty-list">No codes yet. Add one above.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    codes.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'code-item';
+        item.innerHTML = `
+            <div class="code-info">
+                <div class="code-name">${escH(c.name)}</div>
+                <div class="code-value"><i class="fa-solid fa-key" style="font-size:.65rem"></i> ${escH(c.code)}</div>
+                <div class="code-perms">
+                    <span class="perm-badge ${c.canEdit ? 'perm-yes':'perm-no'}">
+                        <i class="fa-solid ${c.canEdit ? 'fa-check':'fa-xmark'}"></i>
+                        ${c.canEdit ? 'Can Edit Others' : 'Own Entries Only'}
+                    </span>
+                </div>
+            </div>
+            <div class="code-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteCode(${idx})">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+    document.getElementById('statusBar').textContent = `${codes.length} code(s) active`;
+}
+
+// ===== ADD CODE =====
+document.getElementById('btnAddCode').addEventListener('click', async () => {
+    const name    = document.getElementById('newName').value.trim();
+    const code    = document.getElementById('newCode').value.trim();
+    const canEdit = document.getElementById('newCanEdit').checked;
+
+    if (!name || !code) { toast('Name and Code are required.', false); return; }
+    if (!API_KEY || !BIN_ID) { toast('Set JSONBin config first.', false); return; }
+
+    const btn = document.getElementById('btnAddCode');
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch loading-spin"></i> Saving...';
+
+    try {
+        let codes = await getCurrentCodes();
+        if (codes.find(c => c.code === code)) { toast('Code already exists!', false); return; }
+        codes.push({ name, code, canEdit });
+        await saveCodes(codes);
+        renderCodes(codes);
+        document.getElementById('newName').value = '';
+        document.getElementById('newCode').value = '';
+        document.getElementById('newCanEdit').checked = false;
+        toast(`Code "${code}" added!`, true);
+    } catch(e) {
+        toast('Error: ' + e.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Code';
+    }
+});
+
+async function deleteCode(idx) {
+    if (!confirm('Delete this code?')) return;
+    try {
+        let codes = await getCurrentCodes();
+        const removed = codes.splice(idx, 1)[0];
+        await saveCodes(codes);
+        renderCodes(codes);
+        toast(`Deleted code "${removed.code}"`, true);
+    } catch(e) {
+        toast('Error: ' + e.message, false);
+    }
+}
+
+async function getCurrentCodes() {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: headers() });
+    if (!res.ok) throw new Error('Fetch failed');
+    const data = await res.json();
+    return data.record.codes || [];
+}
+
+// ===== UTILS =====
+function escH(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg, ok=true) {
+    const tc = document.getElementById('toastC');
+    const t  = document.createElement('div');
+    t.className = `toast ${ok?'ok':'fail'}`;
+    t.innerHTML = `<i class="fa-solid ${ok?'fa-circle-check':'fa-circle-xmark'}"></i><span>${msg}</span>`;
+    tc.appendChild(t);
+    setTimeout(()=> t.remove(), 3500);
+}
+</script>
+</body>
+</html>
