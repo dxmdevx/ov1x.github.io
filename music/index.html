@@ -7,7 +7,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -39,8 +39,8 @@
             --offline: #4e5761;
             
             /* Fonts */
-            --font-display: 'Cormorant Garamond', Georgia, serif;
-            --font-sans: 'Outfit', sans-serif;
+            --font-display: 'Kanit', sans-serif;
+            --font-sans: 'Kanit', sans-serif;
             --font-mono: 'DM Mono', monospace;
             
             /* Shadows & Effects */
@@ -835,6 +835,21 @@
             color: var(--m2);
         }
 
+        .song-meta-stack {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .song-owner {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.68rem;
+            color: var(--m1);
+        }
+
         .copy-actions {
             display: flex;
             gap: 0.5rem;
@@ -926,6 +941,34 @@
             align-items: center;
             flex-wrap: wrap;
             margin-top: 0.25rem;
+        }
+
+        .trash-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .trash-item {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .trash-title {
+            color: var(--white);
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .trash-meta {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--m1);
+            text-transform: uppercase;
+            line-height: 1.6;
         }
 
         /* Song Table View */
@@ -1463,6 +1506,9 @@
                 <button class="btn btn-primary" id="btnAddTrack" title="Add a track to Google Sheet">
                     <i class="fa-solid fa-plus"></i> Add
                 </button>
+                <button class="btn" id="btnOpenTrash" title="Restore deleted tracks">
+                    <i class="fa-solid fa-trash-arrow-up"></i> Trash
+                </button>
                 <button class="btn btn-primary" id="btnOpenGuide">
                     <i class="fa-solid fa-gear"></i> Sheet API
                 </button>
@@ -1687,41 +1733,223 @@
                 </ol>
                 <div class="code-block-wrapper">
                     <button class="btn-copy-code" id="btnCopyAppsScriptCode"><i class="fa-solid fa-copy"></i> Copy Script</button>
-                    <pre><code id="appsScriptCode" style="color: var(--white); max-height: 260px;">function doPost(e) {
-  var body = JSON.parse((e.postData && e.postData.contents) || '{}');
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var action = String(body.action || '').toLowerCase();
-  var song = body.song || {};
-  var rowNumber = Number(body.rowNumber || 0);
+                    <pre><code id="appsScriptCode" style="color: var(--white); max-height: 260px;">var MAIN_SHEET = 'Sheet1';
+var TRASH_SHEET = 'Trash';
+var AUDIT_SHEET = 'Audit Log';
 
-  if (!body.code) return reply({ ok: false, error: 'Missing access code' });
-  if (!action) return reply({ ok: false, error: 'Missing action' });
+function doGet(e) {
+  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
+  if (action !== 'trash') return reply({ ok: false, error: 'Unknown action' });
 
-  var id = String(song.id || '').trim();
-  var name = String(song.name || '').trim();
-  var category = String(song.category || '').trim();
-  var now = new Date();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
+  var requester = {
+    code: String((e.parameter && e.parameter.code) || '').trim(),
+    canEdit: String((e.parameter && e.parameter.canEdit) || '') === 'true'
+  };
+  if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
 
-  if (action === 'add') {
-    if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-    sheet.appendRow([id, name, category, now]);
-    return reply({ ok: true });
+  var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
+    return requester.canEdit || String(row[4] || '').trim() === requester.code;
+  }).map(function(row) {
+    return {
+      id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
+      owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
+      updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
+      deletedReason: row[12]
+    };
+  });
+
+  return reply({ ok: true, trash: rows });
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var body = JSON.parse((e.postData && e.postData.contents) || '{}');
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = getOrCreateSheet(ss, MAIN_SHEET, mainHeaders());
+    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
+    var audit = getOrCreateSheet(ss, AUDIT_SHEET, auditHeaders());
+    var action = String(body.action || '').toLowerCase();
+    var song = body.song || {};
+    var original = body.original || {};
+    var requester = {
+      code: String(body.code || '').trim(),
+      name: String(body.user || '').trim(),
+      canEdit: body.canEdit === true
+    };
+
+    if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
+    if (!action) return reply({ ok: false, error: 'Missing action' });
+
+    ensureHeaders(sheet, mainHeaders());
+    ensureHeaders(trash, trashHeaders());
+    ensureHeaders(audit, auditHeaders());
+
+    var id = String(song.id || '').trim();
+    var name = String(song.name || '').trim();
+    var category = String(song.category || '').trim();
+    var now = new Date();
+
+    if (action === 'add') {
+      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+      if (findRowById(sheet, id)) return reply({ ok: false, error: 'This ID already exists' });
+      createBackup(ss, sheet);
+      sheet.appendRow([id, name, category, now, requester.code, requester.name, requester.name, now, '', '']);
+      logAudit(audit, 'add', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'update') {
+      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+      var updateRow = locateOwnedRow(sheet, original, requester);
+      if (!updateRow.ok) return reply(updateRow);
+      var duplicateRow = findRowById(sheet, id);
+      if (duplicateRow && duplicateRow !== updateRow.row) return reply({ ok: false, error: 'This ID already exists on another row' });
+      createBackup(ss, sheet);
+      sheet.getRange(updateRow.row, 1, 1, 10).setValues([[
+        id, name, category, now,
+        updateRow.data[4] || requester.code,
+        updateRow.data[5] || requester.name,
+        updateRow.data[6] || requester.name,
+        updateRow.data[7] || now,
+        requester.name,
+        now
+      ]]);
+      logAudit(audit, 'update', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'delete') {
+      var deleteRow = locateOwnedRow(sheet, original, requester);
+      if (!deleteRow.ok) return reply(deleteRow);
+      createBackup(ss, sheet);
+      var deleted = deleteRow.data.slice();
+      trash.appendRow([
+        deleted[0], deleted[1], deleted[2], deleted[3],
+        deleted[4], deleted[5], deleted[6], deleted[7], deleted[8], deleted[9],
+        requester.name, now, String(body.reason || '').trim()
+      ]);
+      sheet.deleteRow(deleteRow.row);
+      logAudit(audit, 'delete', deleted[0], deleted[1], requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'restore') {
+      var restoreRow = locateTrashRow(trash, original, requester);
+      if (!restoreRow.ok) return reply(restoreRow);
+      var item = restoreRow.data;
+      if (findRowById(sheet, item[0])) return reply({ ok: false, error: 'This ID already exists in active sheet' });
+      createBackup(ss, sheet);
+      sheet.appendRow([item[0], item[1], item[2], now, item[4], item[5], item[6], item[7], requester.name, now]);
+      trash.deleteRow(restoreRow.row);
+      logAudit(audit, 'restore', item[0], item[1], requester);
+      return reply({ ok: true });
+    }
+
+    return reply({ ok: false, error: 'Unknown action' });
+  } catch (err) {
+    return reply({ ok: false, error: String(err && err.message ? err.message : err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mainHeaders() {
+  return ['ID', 'Name', 'Category', 'Auto time update', 'Owner Code', 'Owner Name', 'Created By', 'Created At', 'Updated By', 'Updated At'];
+}
+
+function trashHeaders() {
+  return ['ID', 'Name', 'Category', 'Last Updated', 'Owner Code', 'Owner Name', 'Created By', 'Created At', 'Updated By', 'Updated At', 'Deleted By', 'Deleted At', 'Deleted Reason'];
+}
+
+function auditHeaders() {
+  return ['Time', 'Action', 'ID', 'Name', 'User', 'Code'];
+}
+
+function getOrCreateSheet(ss, name, headers) {
+  var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  ensureHeaders(sheet, headers);
+  return sheet;
+}
+
+function ensureHeaders(sheet, headers) {
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+}
+
+function locateOwnedRow(sheet, original, requester) {
+  var originalId = String(original.id || '').trim();
+  var originalOwner = String(original.owner || '').trim();
+  if (!originalId) return { ok: false, error: 'Missing original ID' };
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: false, error: 'Sheet is empty' };
+  var values = sheet.getRange(2, 1, lastRow - 1, mainHeaders().length).getValues();
+
+  for (var i = 0; i < values.length; i++) {
+    var rowId = String(values[i][0] || '').trim();
+    var ownerCode = String(values[i][4] || '').trim();
+    var ownerName = String(values[i][5] || '').trim();
+    if (rowId !== originalId) continue;
+    if (originalOwner && ownerCode && ownerCode !== originalOwner) continue;
+    if (!requester.canEdit && ownerCode !== requester.code) {
+      return { ok: false, error: 'You can only edit your own tracks' };
+    }
+    if (!requester.canEdit && !ownerCode) {
+      return { ok: false, error: 'This old row has no owner. Ask an admin to claim or edit it.' };
+    }
+    return { ok: true, row: i + 2, data: values[i] };
   }
 
-  if (action === 'update') {
-    if (rowNumber < 2) return reply({ ok: false, error: 'Invalid row number' });
-    if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-    sheet.getRange(rowNumber, 1, 1, 4).setValues([[id, name, category, now]]);
-    return reply({ ok: true });
+  return { ok: false, error: 'Track was not found. Refresh before editing.' };
+}
+
+function locateTrashRow(sheet, original, requester) {
+  var originalId = String(original.id || '').trim();
+  var originalOwner = String(original.owner || '').trim();
+  if (!originalId) return { ok: false, error: 'Missing original ID' };
+
+  var values = sheetRows(sheet, trashHeaders().length);
+  for (var i = 0; i < values.length; i++) {
+    var rowId = String(values[i][0] || '').trim();
+    var ownerCode = String(values[i][4] || '').trim();
+    if (rowId !== originalId) continue;
+    if (originalOwner && ownerCode !== originalOwner) continue;
+    if (!requester.canEdit && ownerCode !== requester.code) {
+      return { ok: false, error: 'You can only restore your own deleted tracks' };
+    }
+    return { ok: true, row: i + 2, data: values[i] };
   }
 
-  if (action === 'delete') {
-    if (rowNumber < 2) return reply({ ok: false, error: 'Invalid row number' });
-    sheet.deleteRow(rowNumber);
-    return reply({ ok: true });
-  }
+  return { ok: false, error: 'Trash item was not found. Reload trash and try again.' };
+}
 
-  return reply({ ok: false, error: 'Unknown action' });
+function findRowById(sheet, id) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  var values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === id) return i + 2;
+  }
+  return 0;
+}
+
+function sheetRows(sheet, width) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 1, lastRow - 1, width).getValues();
+}
+
+function createBackup(ss, sheet) {
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+  var backup = sheet.copyTo(ss).setName('backup-' + stamp);
+  backup.hideSheet();
+}
+
+function logAudit(sheet, action, id, name, requester) {
+  sheet.appendRow([new Date(), action, id, name, requester.name, requester.code]);
 }
 
 function reply(data) {
@@ -1731,7 +1959,7 @@ function reply(data) {
 }</code></pre>
                 </div>
                 <h3>Sheet Columns</h3>
-                <p>Use columns A-D as <strong>ID</strong>, <strong>Name</strong>, <strong>Category</strong>, and <strong>Auto time update</strong>. Row 1 can be headers.</p>
+                <p>Main sheet uses columns A-J: <strong>ID</strong>, <strong>Name</strong>, <strong>Category</strong>, <strong>Auto time update</strong>, <strong>Owner Code</strong>, <strong>Owner Name</strong>, <strong>Created By</strong>, <strong>Created At</strong>, <strong>Updated By</strong>, and <strong>Updated At</strong>. Deleted tracks move to the Trash sheet and every action is logged in Audit Log.</p>
                 <button class="btn btn-primary" id="btnGotIt" style="width: 100%; margin-top: 0.5rem;">
                     Done, I got it!
                 </button>
@@ -1765,6 +1993,21 @@ function reply(data) {
                             <button class="btn btn-primary" id="btnSaveTrack"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trash / Restore Modal -->
+    <div class="modal-overlay" id="trashModal">
+        <div class="modal">
+            <button class="modal-close" id="btnCloseTrashModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="modal-title">Trash</h2>
+            <div class="modal-content">
+                <p>Deleted tracks stay here and can be restored by the owner or an admin code.</p>
+                <button class="btn btn-primary" id="btnReloadTrash" style="width:100%;"><i class="fa-solid fa-arrows-rotate"></i> Reload Trash</button>
+                <div class="trash-list" id="trashList">
+                    <div class="trash-meta">Open trash to load deleted tracks.</div>
                 </div>
             </div>
         </div>
@@ -1989,6 +2232,7 @@ function reply(data) {
         let isUsingDemoData = false;
         let currentEditor = null;
         let editingRowNumber = null;
+        let editingOriginalSong = null;
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/gviz/tq?tqx=out:json';
         let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || '';
 
@@ -1997,6 +2241,7 @@ function reply(data) {
         const connStatusText = document.getElementById('connStatusText');
         const btnRefresh = document.getElementById('btnRefresh');
         const btnAddTrack = document.getElementById('btnAddTrack');
+        const btnOpenTrash = document.getElementById('btnOpenTrash');
         const btnOpenGuide = document.getElementById('btnOpenGuide');
         const btnCloseGuide = document.getElementById('btnCloseGuide');
         const btnGotIt = document.getElementById('btnGotIt');
@@ -2041,6 +2286,10 @@ function reply(data) {
         const trackIdInput = document.getElementById('trackIdInput');
         const trackNameInput = document.getElementById('trackNameInput');
         const trackCategoryInput = document.getElementById('trackCategoryInput');
+        const trashModal = document.getElementById('trashModal');
+        const btnCloseTrashModal = document.getElementById('btnCloseTrashModal');
+        const btnReloadTrash = document.getElementById('btnReloadTrash');
+        const trashList = document.getElementById('trashList');
 
         // Config variables
         let currentView = 'grid'; // 'grid' | 'table'
@@ -2077,6 +2326,12 @@ function reply(data) {
             btnAddTrack.addEventListener('click', () => {
                 if (!requireEditor()) return;
                 openTrackModal();
+            });
+
+            btnOpenTrash.addEventListener('click', () => {
+                if (!requireEditor()) return;
+                trashModal.classList.add('open');
+                loadTrash();
             });
 
             window.addEventListener('fxf-user-change', (e) => {
@@ -2153,6 +2408,11 @@ function reply(data) {
             });
             btnSaveTrack.addEventListener('click', saveTrackFromModal);
             btnDeleteTrack.addEventListener('click', deleteTrackFromModal);
+            btnCloseTrashModal.addEventListener('click', () => trashModal.classList.remove('open'));
+            btnReloadTrash.addEventListener('click', loadTrash);
+            trashModal.addEventListener('click', (e) => {
+                if (e.target === trashModal) trashModal.classList.remove('open');
+            });
 
             // Load Demo button
             btnLoadDemo.addEventListener('click', () => {
@@ -2225,9 +2485,15 @@ function reply(data) {
                     const name = cells[1] ? String(cells[1].v !== null ? cells[1].v : '').trim() : '';
                     const category = cells[2] ? String(cells[2].v !== null ? cells[2].v : '').trim() : '';
                     const lastUpdated = cells[3] ? (cells[3].f || cells[3].v || '') : '';
+                    const owner = cells[4] ? String(cells[4].v !== null ? cells[4].v : '').trim() : '';
+                    const ownerName = cells[5] ? String(cells[5].v !== null ? cells[5].v : '').trim() : '';
+                    const createdBy = cells[6] ? String(cells[6].v !== null ? cells[6].v : '').trim() : '';
+                    const createdAt = cells[7] ? (cells[7].f || cells[7].v || '') : '';
+                    const updatedBy = cells[8] ? String(cells[8].v !== null ? cells[8].v : '').trim() : '';
+                    const updatedAt = cells[9] ? (cells[9].f || cells[9].v || '') : '';
                     
                     if (id || name || category) {
-                        parsedSongs.push({ id, name, category, lastUpdated, rowNumber: i + 1 });
+                        parsedSongs.push({ id, name, category, lastUpdated, owner, ownerName, createdBy, createdAt, updatedBy, updatedAt, rowNumber: i + 1 });
                     }
                 }
 
@@ -2484,15 +2750,20 @@ function reply(data) {
                     </div>
                     <div class="song-title">${highlightMatch(song.name, searchInput.value)}</div>
                     <div class="song-footer">
-                        <div class="song-date" title="${song.lastUpdated ? new Date(song.lastUpdated).toLocaleString() : ''}">
-                            <i class="fa-solid fa-clock-rotate-left"></i> ${formattedDate}
+                        <div class="song-meta-stack">
+                            <div class="song-date" title="${song.lastUpdated ? new Date(song.lastUpdated).toLocaleString() : ''}">
+                                <i class="fa-solid fa-clock-rotate-left"></i> ${formattedDate}
+                            </div>
+                            <div class="song-owner">
+                                <i class="fa-solid fa-user-pen"></i> ${escapeHTML(trackMetaLabel(song))}
+                            </div>
                         </div>
                         <div class="copy-actions">
                             <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)">
                                 <i class="fa-solid fa-copy"></i> Copy Lua
                             </button>
-                            ${canEditSheet() ? `
-                            <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByRow(${song.rowNumber})">
+                            ${canEditTrack(song) ? `
+                            <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByKey('${escapeJS(song.id)}', '${escapeJS(song.owner || '')}')">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </button>` : ''}
                         </div>
@@ -2544,13 +2815,14 @@ function reply(data) {
                     </td>
                     <td>
                         <span class="song-category-tag" ${tagStyle}>${escapeHTML(song.category || 'Unassigned')}</span>
+                        <div class="song-owner" style="margin-top:.45rem;">${escapeHTML(trackMetaLabel(song))}</div>
                     </td>
                     <td>
                         <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)" style="padding: 0.35rem 0.65rem;">
                             <i class="fa-solid fa-copy"></i> Lua
                         </button>
-                        ${canEditSheet() ? `
-                        <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByRow(${song.rowNumber})" style="padding: 0.35rem 0.65rem;margin-left:.35rem;">
+                        ${canEditTrack(song) ? `
+                        <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByKey('${escapeJS(song.id)}', '${escapeJS(song.owner || '')}')" style="padding: 0.35rem 0.65rem;margin-left:.35rem;">
                             <i class="fa-solid fa-pen"></i> Edit
                         </button>` : ''}
                     </td>
@@ -2562,6 +2834,19 @@ function reply(data) {
 
         function canEditSheet() {
             return !!currentEditor;
+        }
+
+        function canEditTrack(song) {
+            if (!currentEditor || !song) return false;
+            if (currentEditor.canEdit) return true;
+            return !!song.owner && song.owner === currentEditor.code;
+        }
+
+        function trackMetaLabel(song) {
+            if (song.updatedBy) return `Updated by ${song.updatedBy}`;
+            if (song.createdBy) return `Created by ${song.createdBy}`;
+            if (song.ownerName) return `Created by ${song.ownerName}`;
+            return 'Legacy row';
         }
 
         function requireEditor() {
@@ -2578,11 +2863,15 @@ function reply(data) {
             btnAddTrack.title = canEditSheet() ? 'Add a track to Google Sheet' : 'Enter access code to add tracks';
         }
 
-        function openTrackModalByRow(rowNumber) {
+        function openTrackModalByKey(id, owner) {
             if (!requireEditor()) return;
-            const song = allSongs.find(s => Number(s.rowNumber) === Number(rowNumber));
+            const song = allSongs.find(s => s.id === id && String(s.owner || '') === String(owner || ''));
             if (!song) {
                 showToast("Track row not found. Refresh and try again.", "error");
+                return;
+            }
+            if (!canEditTrack(song)) {
+                showToast("You can only edit your own tracks.", "error");
                 return;
             }
             openTrackModal(song);
@@ -2590,6 +2879,7 @@ function reply(data) {
 
         function openTrackModal(song = null) {
             editingRowNumber = song ? song.rowNumber : null;
+            editingOriginalSong = song ? { id: song.id, owner: song.owner || '' } : null;
             trackModalTitle.innerText = song ? 'Edit Track' : 'Add Track';
             trackIdInput.value = song ? song.id : '';
             trackNameInput.value = song ? song.name : '';
@@ -2602,6 +2892,7 @@ function reply(data) {
         function closeTrackModal() {
             trackModal.classList.remove('open');
             editingRowNumber = null;
+            editingOriginalSong = null;
         }
 
         async function saveTrackFromModal() {
@@ -2617,13 +2908,68 @@ function reply(data) {
             }
 
             const action = editingRowNumber ? 'update' : 'add';
-            await writeSheet(action, { song, rowNumber: editingRowNumber });
+            await writeSheet(action, { song, original: editingOriginalSong });
         }
 
         async function deleteTrackFromModal() {
-            if (!requireEditor() || !editingRowNumber) return;
-            if (!confirm('Delete this track from Google Sheet?')) return;
-            await writeSheet('delete', { rowNumber: editingRowNumber });
+            if (!requireEditor() || !editingOriginalSong) return;
+            const name = trackNameInput.value.trim() || editingOriginalSong.id;
+            if (!confirm(`Move "${name}" to Trash? You can restore it later from Trash.`)) return;
+            await writeSheet('delete', { original: editingOriginalSong });
+        }
+
+        async function loadTrash() {
+            if (!requireEditor()) return;
+            if (!SHEET_API_URL) {
+                showToast("Set the Sheet API URL first.", "error");
+                guideModal.classList.add('open');
+                return;
+            }
+
+            trashList.innerHTML = '<div class="trash-meta"><i class="fa-solid fa-circle-notch spin"></i> Loading trash...</div>';
+            try {
+                const url = `${SHEET_API_URL}?action=trash&code=${encodeURIComponent(currentEditor.code)}&canEdit=${currentEditor.canEdit === true}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (!response.ok || result.ok === false) throw new Error(result.error || 'Trash API failed');
+                renderTrash(result.trash || []);
+            } catch (err) {
+                trashList.innerHTML = `<div class="trash-meta">Trash load failed: ${escapeHTML(err.message)}</div>`;
+            }
+        }
+
+        function renderTrash(items) {
+            if (!items.length) {
+                trashList.innerHTML = '<div class="trash-meta">Trash is empty.</div>';
+                return;
+            }
+
+            trashList.innerHTML = '';
+            items.forEach(item => {
+                const node = document.createElement('div');
+                node.className = 'trash-item';
+                node.innerHTML = `
+                    <div class="trash-title">${escapeHTML(item.name || item.id)}</div>
+                    <div class="trash-meta">
+                        ID: ${escapeHTML(item.id)}<br>
+                        Category: ${escapeHTML(item.category || 'Unassigned')}<br>
+                        Created by: ${escapeHTML(item.createdBy || item.ownerName || 'Unknown')}<br>
+                        Deleted by: ${escapeHTML(item.deletedBy || 'Unknown')}<br>
+                        Deleted at: ${escapeHTML(formatMaybeDate(item.deletedAt))}
+                    </div>
+                    <button class="btn btn-primary" onclick="restoreTrashItem('${escapeJS(item.id)}', '${escapeJS(item.owner || '')}')">
+                        <i class="fa-solid fa-trash-arrow-up"></i> Restore
+                    </button>
+                `;
+                trashList.appendChild(node);
+            });
+        }
+
+        async function restoreTrashItem(id, owner) {
+            if (!requireEditor()) return;
+            if (!confirm(`Restore "${id}" back to the main sheet?`)) return;
+            await writeSheet('restore', { original: { id, owner } });
+            await loadTrash();
         }
 
         async function writeSheet(action, payload) {
@@ -2644,10 +2990,11 @@ function reply(data) {
                     method: 'POST',
                     body: JSON.stringify({
                         action,
-                        rowNumber: payload.rowNumber || null,
+                        original: payload.original || null,
                         song: payload.song || null,
                         code: currentEditor.code,
-                        user: currentEditor.name
+                        user: currentEditor.name,
+                        canEdit: currentEditor.canEdit === true
                     })
                 });
 
@@ -2659,7 +3006,7 @@ function reply(data) {
                 }
 
                 closeTrackModal();
-                showToast(action === 'delete' ? "Track deleted from sheet." : "Track saved to sheet.", "success");
+                showToast(writeSuccessMessage(action), "success");
                 await loadSheetData();
             } catch (err) {
                 showToast("Sheet update failed: " + err.message, "error");
@@ -2667,6 +3014,12 @@ function reply(data) {
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
+        }
+
+        function writeSuccessMessage(action) {
+            if (action === 'delete') return 'Track moved to Trash.';
+            if (action === 'restore') return 'Track restored from Trash.';
+            return 'Track saved to sheet.';
         }
 
         // Render Code Preview Window at the bottom
