@@ -258,6 +258,10 @@ document.getElementById('btnSaveCfg').addEventListener('click', async () => {
     status.style.color = 'var(--m2)';
     status.textContent = 'Testing JSONBin...';
     try {
+        const detectedType = await testJsonBinConnection();
+        KEY_TYPE = detectedType;
+        localStorage.setItem('fxf_key_type', KEY_TYPE);
+        document.getElementById('cfgKeyType').value = KEY_TYPE;
         await fetchCodes(true);
         status.style.color = 'var(--green)';
         status.textContent = 'Saved and connected!';
@@ -272,8 +276,8 @@ document.getElementById('btnSaveCfg').addEventListener('click', async () => {
 });
 
 // ===== JSONBIN API =====
-const headers = () => {
-    const authHeader = KEY_TYPE === 'access' ? 'X-Access-Key' : 'X-Master-Key';
+const headers = (type = KEY_TYPE) => {
+    const authHeader = type === 'access' ? 'X-Access-Key' : 'X-Master-Key';
     return {
         'Content-Type': 'application/json',
         [authHeader]: API_KEY,
@@ -302,6 +306,30 @@ async function parseJsonBinError(res) {
     if (res.status === 404) return `Bin not found 404: check the Bin ID.${detail}`;
     if (res.status === 403) return `Forbidden 403: this key cannot access/update this bin.${detail}`;
     return `Fetch failed: ${res.status}${detail}`;
+}
+
+async function testJsonBinConnection() {
+    const preferred = KEY_TYPE;
+    const fallback = preferred === 'access' ? 'master' : 'access';
+    let firstError = null;
+
+    for (const type of [preferred, fallback]) {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: headers(type) });
+        if (res.ok) return type;
+        const msg = await parseJsonBinErrorForType(res, type);
+        if (!firstError) firstError = msg;
+        if (![401, 403].includes(res.status)) throw new Error(msg);
+    }
+
+    throw new Error(firstError || 'Cannot connect to JSONBin.');
+}
+
+async function parseJsonBinErrorForType(res, type) {
+    const prevType = KEY_TYPE;
+    KEY_TYPE = type;
+    const msg = await parseJsonBinError(res);
+    KEY_TYPE = prevType;
+    return msg;
 }
 
 async function fetchCodes(shouldThrow = false) {
