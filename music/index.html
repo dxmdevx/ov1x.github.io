@@ -1106,6 +1106,22 @@
             color: var(--m1);
         }
 
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .toast.error i {
+            color: #ef4444;
+        }
+
+        .toast.warn {
+            border-color: rgba(234, 179, 8, 0.5);
+        }
+
+        .toast.warn i {
+            color: #eab308;
+        }
+
         @keyframes slide-in {
             to {
                 transform: translateY(0);
@@ -1731,7 +1747,11 @@
                         Google Apps Script Web App URL
                         <input type="text" id="sheetApiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
                     </label>
-                    <button class="btn btn-primary" id="btnSaveSheetApi" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Sheet API URL</button>
+                    <label>
+                        Google Spreadsheet ID or URL
+                        <input type="text" id="sheetIdInput" placeholder="1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8">
+                    </label>
+                    <button class="btn btn-primary" id="btnSaveSheetApi" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Configuration</button>
                 </div>
                 <ol>
                     <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank" style="color: var(--gold);">Open Spreadsheet</a>.</li>
@@ -1776,133 +1796,6 @@ function verifyCode(code) {
     return String(c.code).trim() === String(code).trim();
   });
   return found ? { name: found.name, canEdit: found.canEdit } : null;
-}
-
-function doGet(e) {
-  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
-
-  // Admin code management actions (no auth required for setup)
-  if (action === 'get_codes') {
-    return reply({ ok: true, codes: getAccessCodes() });
-  }
-
-  // Verify access code for all other actions
-  var code = String((e.parameter && e.parameter.code) || '').trim();
-  var requester = verifyCode(code);
-  if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
-
-  if (action === 'trash') {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-
-    var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
-      return requester.canEdit || String(row[4] || '').trim() === code;
-    }).map(function(row) {
-      return {
-        id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
-        owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
-        updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
-        deletedReason: row[12]
-      };
-    });
-    return reply({ ok: true, trash: rows });
-  }
-
-  return reply({ ok: false, error: 'Unknown action' });
-}
-
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-  try {
-    var body = JSON.parse((e.postData && e.postData.contents) || '{}');
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getOrCreateSheet(ss, MAIN_SHEET, mainHeaders());
-    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-    var audit = getOrCreateSheet(ss, AUDIT_SHEET, auditHeaders());
-    var action = String(body.action || '').toLowerCase();
-    var song = body.song || {};
-    var original = body.original || {};
-
-    // Verify access code using secure Properties storage
-    var code = String(body.code || '').trim();
-    var requester = verifyCode(code);
-    if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
-    requester.code = code; // Keep code for row matching
-
-    if (!action) return reply({ ok: false, error: 'Missing action' });
-
-    ensureHeaders(sheet, mainHeaders());
-    ensureHeaders(trash, trashHeaders());
-    ensureHeaders(audit, auditHeaders());
-
-    var id = String(song.id || '').trim();
-    var name = String(song.name || '').trim();
-    var category = String(song.category || '').trim();
-    var now = new Date();
-
-    if (action === 'add') {
-      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-      if (findRowById(sheet, id)) return reply({ ok: false, error: 'This ID already exists' });
-      createBackup(ss, sheet);
-      sheet.appendRow([id, name, category, now, requester.code, requester.name, requester.name, now, '', '']);
-      logAudit(audit, 'add', id, name, requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'update') {
-      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-      var updateRow = locateOwnedRow(sheet, original, requester);
-      if (!updateRow.ok) return reply(updateRow);
-      var duplicateRow = findRowById(sheet, id);
-      if (duplicateRow && duplicateRow !== updateRow.row) return reply({ ok: false, error: 'This ID already exists on another row' });
-      createBackup(ss, sheet);
-      sheet.getRange(updateRow.row, 1, 1, 10).setValues([[
-        id, name, category, now,
-        updateRow.data[4] || requester.code,
-        updateRow.data[5] || requester.name,
-        updateRow.data[6] || requester.name,
-        updateRow.data[7] || now,
-        requester.name,
-        now
-      ]]);
-      logAudit(audit, 'update', id, name, requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'delete') {
-      var deleteRow = locateOwnedRow(sheet, original, requester);
-      if (!deleteRow.ok) return reply(deleteRow);
-      createBackup(ss, sheet);
-      var deleted = deleteRow.data.slice();
-      trash.appendRow([
-        deleted[0], deleted[1], deleted[2], deleted[3],
-        deleted[4], deleted[5], deleted[6], deleted[7], deleted[8], deleted[9],
-        requester.name, now, String(body.reason || '').trim()
-      ]);
-      sheet.deleteRow(deleteRow.row);
-      logAudit(audit, 'delete', deleted[0], deleted[1], requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'restore') {
-      var restoreRow = locateTrashRow(trash, original, requester);
-      if (!restoreRow.ok) return reply(restoreRow);
-      var item = restoreRow.data;
-      if (findRowById(sheet, item[0])) return reply({ ok: false, error: 'This ID already exists in active sheet' });
-      createBackup(ss, sheet);
-      sheet.appendRow([item[0], item[1], item[2], now, item[4], item[5], item[6], item[7], requester.name, now]);
-      trash.deleteRow(restoreRow.row);
-      logAudit(audit, 'restore', item[0], item[1], requester);
-      return reply({ ok: true });
-    }
-
-    return reply({ ok: false, error: 'Unknown action' });
-  } catch (err) {
-    return reply({ ok: false, error: String(err && err.message ? err.message : err) });
-  } finally {
-    lock.releaseLock();
-  }
 }
 
 function mainHeaders() {
@@ -1996,8 +1889,93 @@ function createBackup(ss, sheet) {
   backup.hideSheet();
 }
 
+// Log admin/editor actions in Google Sheet
 function logAudit(sheet, action, id, name, requester) {
   sheet.appendRow([new Date(), action, id, name, requester.name, requester.code]);
+}
+
+function reply(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Add CORS headers wrapper
+function doGet(e) {
+  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
+
+  // Admin code management actions (no auth required for setup)
+  if (action === 'get_codes') {
+    return reply({ ok: true, codes: getAccessCodes() });
+  }
+
+  // Get administrative audit logs
+  if (action === 'get_audit_log') {
+    var adminPassword = String(e.parameter.adminPassword || '').trim();
+    if (adminPassword !== 'fxf-admin-2026') return reply({ ok: false, error: 'Invalid admin password' });
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var audit = getOrCreateSheet(ss, AUDIT_SHEET, auditHeaders());
+    var rows = sheetRows(audit, auditHeaders().length);
+    var logs = rows.map(function(row) {
+      return {
+        time: row[0],
+        action: row[1],
+        id: row[2],
+        name: row[3],
+        user: row[4],
+        code: row[5]
+      };
+    });
+    logs.reverse(); // Newest logs on top
+    return reply({ ok: true, logs: logs });
+  }
+
+  // Fetch all active tracks (public read access, enables private spreadsheet usage)
+  if (action === 'get_songs') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = getOrCreateSheet(ss, MAIN_SHEET, mainHeaders());
+    var rows = sheetRows(sheet, mainHeaders().length);
+    var songs = rows.map(function(row, idx) {
+      return {
+        id: row[0],
+        name: row[1],
+        category: row[2],
+        lastUpdated: row[3],
+        owner: row[4],
+        ownerName: row[5],
+        createdBy: row[6],
+        createdAt: row[7],
+        updatedBy: row[8],
+        updatedAt: row[9],
+        rowNumber: idx + 2
+      };
+    });
+    return reply({ ok: true, songs: songs });
+  }
+
+  // Verify access code for all other actions
+  var code = String((e.parameter && e.parameter.code) || '').trim();
+  var requester = verifyCode(code);
+  if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
+
+  if (action === 'trash') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
+
+    var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
+      return requester.canEdit || String(row[4] || '').trim() === code;
+    }).map(function(row) {
+      return {
+        id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
+        owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
+        updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
+        deletedReason: row[12]
+      };
+    });
+    return reply({ ok: true, trash: rows });
+  }
+
+  return reply({ ok: false, error: 'Unknown action' });
 }
 
 function doPost(e) {
@@ -2010,9 +1988,7 @@ function doPost(e) {
     // Admin code management actions (no auth required for setup)
     if (action === 'set_codes') {
       var adminPassword = String(body.adminPassword || '').trim();
-      if (adminPassword !== 'fxf-admin-2026') {
-        return reply({ ok: false, error: 'Invalid admin password' });
-      }
+      if (adminPassword !== 'fxf-admin-2026') return reply({ ok: false, error: 'Invalid admin password' });
       var codes = body.codes || [];
       saveAccessCodes(codes);
       return reply({ ok: true });
@@ -2080,11 +2056,11 @@ function doPost(e) {
       var loc = locateTrashRow(trash, original, requester);
       if (!loc.ok) return reply(loc);
 
-      createBackup(ss, sheet);
+      createBackup(ss, trash);
       var row = loc.row;
-      var data = loc.data;
+      var data = trash.getRange(row, 1, 1, 13).getValues()[0];
       trash.deleteRow(row);
-      sheet.appendRow([data[0], data[1], data[2], now, data[4], data[5], data[6], data[7], requester.name, now]);
+      sheet.appendRow([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]]);
       logAudit(audit, 'restore', id, name, requester);
       return reply({ ok: true });
     }
@@ -2095,13 +2071,6 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
-}
-
-function reply(data) {
-  var output = ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-  return output;
 }</code></pre>
                 </div>
                 <h3>Sheet Columns</h3>
@@ -2338,12 +2307,13 @@ function reply(data) {
                     dispatchUserEvent();
                 } else {
                     codeErr.style.display = 'block';
+                    codeErr.innerHTML = '<i class="fa-solid fa-xmark"></i> Invalid code';
                     codeInput.value = '';
                     codeInput.focus();
                 }
             } catch(e) {
                 codeErr.style.display = 'block';
-                codeErr.innerHTML = '<i class="fa-solid fa-xmark"></i> Network error — check JSONBin config in admin';
+                codeErr.innerHTML = '<i class="fa-solid fa-xmark"></i> Network error — check Apps Script URL in settings';
             } finally {
                 btnCodeSubmit.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock';
                 btnCodeSubmit.disabled = false;
@@ -2361,18 +2331,13 @@ function reply(data) {
         async function loadCodes() {
             if (cachedCodes) return cachedCodes;
             const apiUrl = SHEET_API_URL();
-            if (!apiUrl) return [];
-            try {
-                const res = await fetch(`${apiUrl}?action=get_codes`);
-                if (!res.ok) throw new Error('fetch fail');
-                const data = await res.json();
-                cachedCodes = data.codes || [];
-                setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
-                return cachedCodes;
-            } catch (e) {
-                console.error('Failed to load codes:', e);
-                return [];
-            }
+            if (!apiUrl) throw new Error('Apps Script URL is not set');
+            const res = await fetch(`${apiUrl}?action=get_codes`);
+            if (!res.ok) throw new Error('Failed to fetch codes from Apps Script');
+            const data = await res.json();
+            cachedCodes = data.codes || [];
+            setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
+            return cachedCodes;
         }
 
         function dispatchUserEvent() {
@@ -2394,11 +2359,15 @@ function reply(data) {
         let currentEditor = null;
         let editingRowNumber = null;
         let editingOriginalSong = null;
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/gviz/tq?tqx=out:json';
-        let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || 'https://script.google.com/macros/s/AKfycbyj2WD-NOPutw0t2ubw8g-NmNE6IkCk-W1EIED6hS0PDehfETg-bnoIOoVea8vvMkpkjw/exec';
-        // Auto-save the default URL if not already set
+        let SHEET_ID = localStorage.getItem('fxf_sheet_id') || '1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8';
+        const GET_SHEET_CSV_URL = () => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        let SHEET_API_URL = () => localStorage.getItem('fxf_sheet_api_url') || '';
+        // Set fallback/default if not present
         if (!localStorage.getItem('fxf_sheet_api_url')) {
-            localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
+            localStorage.setItem('fxf_sheet_api_url', 'https://script.google.com/macros/s/AKfycbyj2WD-NOPutw0t2ubw8g-NmNE6IkCk-W1EIED6hS0PDehfETg-bnoIOoVea8vvMkpkjw/exec');
+        }
+        if (!localStorage.getItem('fxf_sheet_id')) {
+            localStorage.setItem('fxf_sheet_id', SHEET_ID);
         }
 
         // Elements
@@ -2568,11 +2537,40 @@ function reply(data) {
                 }, 2000);
             });
 
-            sheetApiUrlInput.value = SHEET_API_URL;
+            sheetApiUrlInput.value = SHEET_API_URL();
+            const sheetIdInput = document.getElementById('sheetIdInput');
+            if (sheetIdInput) {
+                sheetIdInput.value = SHEET_ID;
+            }
+
+            // Sync dynamic sheet link on startup
+            const footerLink = document.getElementById('footerSheetLink');
+            if (footerLink) {
+                footerLink.href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing`;
+            }
+
             btnSaveSheetApi.addEventListener('click', () => {
-                SHEET_API_URL = sheetApiUrlInput.value.trim();
-                localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
-                showToast("Sheet API URL saved.", "success");
+                const apiVal = sheetApiUrlInput.value.trim();
+                localStorage.setItem('fxf_sheet_api_url', apiVal);
+                
+                if (sheetIdInput) {
+                    const rawVal = sheetIdInput.value.trim();
+                    let extractedId = rawVal;
+                    const urlMatch = rawVal.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+                    if (urlMatch) {
+                        extractedId = urlMatch[1];
+                    }
+                    SHEET_ID = extractedId;
+                    localStorage.setItem('fxf_sheet_id', SHEET_ID);
+                    sheetIdInput.value = SHEET_ID;
+
+                    if (footerLink) {
+                        footerLink.href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing`;
+                    }
+                }
+                
+                showToast("Configuration saved.", "success");
+                loadSheetData();
             });
 
             btnCloseTrackModal.addEventListener('click', closeTrackModal);
@@ -2625,76 +2623,101 @@ function reply(data) {
             showLoading(true);
             updateBadgeStatus('connecting', 'Connecting...');
             
-            try {
-                const response = await fetch(`${SHEET_CSV_URL}&_=${Date.now()}`);
-                if (!response.ok) throw new Error('Network response error');
-                
-                const text = await response.text();
-                // Strip the Google visualization JS wrapper
-                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w\W]*)\);/);
-                if (!match) throw new Error('Unparseable Google Sheets API output format');
-                
-                const json = JSON.parse(match[1]);
-                if (json.status !== 'ok') throw new Error('Google Sheets query error status: ' + json.status);
-                
-                const rows = json.table.rows;
-                if (!rows || rows.length === 0) {
-                    throw new Error('Google Sheet is empty');
+            let dataLoaded = false;
+            let parsedSongs = [];
+            const apiUrl = SHEET_API_URL();
+            
+            // Try fetching from Apps Script Web App API first (enables private sheet access)
+            if (apiUrl) {
+                try {
+                    const response = await fetch(`${apiUrl}?action=get_songs`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.ok && Array.isArray(result.songs)) {
+                            parsedSongs = result.songs;
+                            dataLoaded = true;
+                            isUsingDemoData = false;
+                            processRawData(parsedSongs);
+                            updateBadgeStatus('connected', 'Live API Connected');
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Apps Script API fetch failed, falling back to public CSV URL:", err);
                 }
-
-                // Determine if headers exist at index 0
-                let dataStartIndex = 0;
-                const firstRowCells = rows[0].c || [];
-                const firstCellVal = firstRowCells[0] ? String(firstRowCells[0].v || '').trim().toLowerCase() : '';
-                
-                if (firstCellVal === 'id') {
-                    dataStartIndex = 1;
-                }
-
-                const parsedSongs = [];
-                for (let i = dataStartIndex; i < rows.length; i++) {
-                    const cells = rows[i].c || [];
+            }
+            
+            // Fallback: public spreadsheet visualization URL
+            if (!dataLoaded) {
+                try {
+                    const csvUrl = GET_SHEET_CSV_URL();
+                    const response = await fetch(`${csvUrl}&_=${Date.now()}`);
+                    if (!response.ok) throw new Error('Network response error');
                     
-                    const id = cells[0] ? String(cells[0].v !== null ? cells[0].v : '').trim() : '';
-                    const name = cells[1] ? String(cells[1].v !== null ? cells[1].v : '').trim() : '';
-                    const category = cells[2] ? String(cells[2].v !== null ? cells[2].v : '').trim() : '';
-                    const lastUpdated = cells[3] ? (cells[3].f || cells[3].v || '') : '';
-                    const owner = cells[4] ? String(cells[4].v !== null ? cells[4].v : '').trim() : '';
-                    const ownerName = cells[5] ? String(cells[5].v !== null ? cells[5].v : '').trim() : '';
-                    const createdBy = cells[6] ? String(cells[6].v !== null ? cells[6].v : '').trim() : '';
-                    const createdAt = cells[7] ? (cells[7].f || cells[7].v || '') : '';
-                    const updatedBy = cells[8] ? String(cells[8].v !== null ? cells[8].v : '').trim() : '';
-                    const updatedAt = cells[9] ? (cells[9].f || cells[9].v || '') : '';
+                    const text = await response.text();
+                    const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w\W]*)\);/);
+                    if (!match) throw new Error('Unparseable Google Sheets API output format');
                     
-                    if (id || name || category) {
-                        parsedSongs.push({ id, name, category, lastUpdated, owner, ownerName, createdBy, createdAt, updatedBy, updatedAt, rowNumber: i + 1 });
+                    const json = JSON.parse(match[1]);
+                    if (json.status !== 'ok') throw new Error('Google Sheets query error status: ' + json.status);
+                    
+                    const rows = json.table.rows;
+                    if (!rows || rows.length === 0) {
+                        throw new Error('Google Sheet is empty');
+                    }
+
+                    let dataStartIndex = 0;
+                    const firstRowCells = rows[0].c || [];
+                    const firstCellVal = firstRowCells[0] ? String(firstRowCells[0].v || '').trim().toLowerCase() : '';
+                    
+                    if (firstCellVal === 'id') {
+                        dataStartIndex = 1;
+                    }
+
+                    parsedSongs = [];
+                    for (let i = dataStartIndex; i < rows.length; i++) {
+                        const cells = rows[i].c || [];
+                        
+                        const id = cells[0] ? String(cells[0].v !== null ? cells[0].v : '').trim() : '';
+                        const name = cells[1] ? String(cells[1].v !== null ? cells[1].v : '').trim() : '';
+                        const category = cells[2] ? String(cells[2].v !== null ? cells[2].v : '').trim() : '';
+                        const lastUpdated = cells[3] ? (cells[3].f || cells[3].v || '') : '';
+                        const owner = cells[4] ? String(cells[4].v !== null ? cells[4].v : '').trim() : '';
+                        const ownerName = cells[5] ? String(cells[5].v !== null ? cells[5].v : '').trim() : '';
+                        const createdBy = cells[6] ? String(cells[6].v !== null ? cells[6].v : '').trim() : '';
+                        const createdAt = cells[7] ? (cells[7].f || cells[7].v || '') : '';
+                        const updatedBy = cells[8] ? String(cells[8].v !== null ? cells[8].v : '').trim() : '';
+                        const updatedAt = cells[9] ? (cells[9].f || cells[9].v || '') : '';
+                        
+                        if (id || name || category) {
+                            parsedSongs.push({ id, name, category, lastUpdated, owner, ownerName, createdBy, createdAt, updatedBy, updatedAt, rowNumber: i + 1 });
+                        }
+                    }
+
+                    isUsingDemoData = false;
+                    processRawData(parsedSongs);
+                    updateBadgeStatus('connected', 'Public Sheet Connected');
+                    dataLoaded = true;
+                } catch (err) {
+                    console.error("Public CSV fetch failed: ", err);
+                    updateBadgeStatus('disconnected', 'Sheet Connection Failed');
+                    
+                    if (allSongs.length === 0) {
+                        showLoading(false);
+                        emptyState.style.display = 'flex';
+                        emptyTitle.innerText = "Connection Failed";
+                        emptyMsg.innerText = "We couldn't connect to the database. Make sure your Apps Script Web App URL is correct, or check if the Google Sheet is shared.";
+                        songsGridContainer.style.display = 'none';
+                        songsTableContainer.style.display = 'none';
+                        previewPane.style.display = 'none';
+                    } else {
+                        showToast("Failed to refresh: Using previously cached data.", "error");
                     }
                 }
-
-                isUsingDemoData = false;
-                processRawData(parsedSongs);
-                updateBadgeStatus('connected', 'Live Sheet Connected');
-                
-            } catch (err) {
-                console.error("Fetch failed: ", err);
-                updateBadgeStatus('disconnected', 'Sheet Connection Failed');
-                
-                if (allSongs.length === 0) {
-                    showLoading(false);
-                    emptyState.style.display = 'flex';
-                    emptyTitle.innerText = "Connection Failed";
-                    emptyMsg.innerText = "We couldn't connect to Google Sheet. Ensure the sheet is public (anyone with link can view) and check your internet connection.";
-                    songsGridContainer.style.display = 'none';
-                    songsTableContainer.style.display = 'none';
-                    previewPane.style.display = 'none';
-                } else {
-                    showToast("Failed to refresh: Using previously cached data.", "error");
-                }
-            } finally {
-                setTimeout(() => {
-                    btnRefresh.querySelector('i').classList.remove('spin');
-                }, 500);
             }
+            
+            setTimeout(() => {
+                btnRefresh.querySelector('i').classList.remove('spin');
+            }, 500);
         }
 
         // Process raw lists, calculate stats, construct dynamic filter pills, and start rendering
@@ -2910,9 +2933,12 @@ function reply(data) {
                 } else if (currentSort === 'id-desc') {
                     return (parseInt(b.id) || 0) - (parseInt(a.id) || 0);
                 } else if (currentSort === 'updated-desc') {
-                    const da = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
-                    const db = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
-                    return db - da;
+                    const parseDate = (dStr) => {
+                        if (!dStr) return 0;
+                        const d = new Date(dStr);
+                        return isNaN(d.getTime()) ? 0 : d.getTime();
+                    };
+                    return parseDate(b.lastUpdated) - parseDate(a.lastUpdated);
                 }
                 return 0;
             });
@@ -2958,8 +2984,13 @@ function reply(data) {
 
                 card.innerHTML = `
                     <div class="song-header">
-                        <div class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
-                            <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
+                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                            <div class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
+                                <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
+                            </div>
+                            <a href="https://create.roblox.com/store/asset/${escapeHTML(song.id)}" target="_blank" class="song-id-badge" style="padding: 0.25rem 0.45rem; color: var(--m2);" title="Open on Roblox Creator Store" onclick="event.stopPropagation()">
+                                <i class="fa-solid fa-up-right-from-square" style="font-size: 0.65rem;"></i>
+                            </a>
                         </div>
                         <span class="song-category-tag" ${tagStyle}>${escapeHTML(safeCategory)}</span>
                     </div>
@@ -3021,9 +3052,14 @@ function reply(data) {
                 
                 tr.innerHTML = `
                     <td>
-                        <span class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
-                            <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
-                        </span>
+                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                            <span class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
+                                <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
+                            </span>
+                            <a href="https://create.roblox.com/store/asset/${escapeHTML(song.id)}" target="_blank" class="song-id-badge" style="padding: 0.25rem 0.45rem; color: var(--m2);" title="Open on Roblox Creator Store" onclick="event.stopPropagation()">
+                                <i class="fa-solid fa-up-right-from-square" style="font-size: 0.65rem;"></i>
+                            </a>
+                        </div>
                     </td>
                     <td class="song-title" style="font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500; text-transform: none;">
                         ${highlightMatch(song.name, searchInput.value)}
@@ -3135,7 +3171,8 @@ function reply(data) {
 
         async function loadTrash() {
             if (!requireEditor()) return;
-            if (!SHEET_API_URL) {
+            const apiUrl = SHEET_API_URL();
+            if (!apiUrl) {
                 showToast("Set the Sheet API URL first.", "error");
                 guideModal.classList.add('open');
                 return;
@@ -3143,7 +3180,7 @@ function reply(data) {
 
             trashList.innerHTML = '<div class="trash-meta"><i class="fa-solid fa-circle-notch spin"></i> Loading trash...</div>';
             try {
-                const url = `${SHEET_API_URL}?action=trash&code=${encodeURIComponent(currentEditor.code)}&canEdit=${currentEditor.canEdit === true}`;
+                const url = `${apiUrl}?action=trash&code=${encodeURIComponent(currentEditor.code)}&canEdit=${currentEditor.canEdit === true}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 if (!response.ok || result.ok === false) throw new Error(result.error || 'Trash API failed');
@@ -3188,9 +3225,10 @@ function reply(data) {
         }
 
         async function writeSheet(action, payload) {
-            if (!SHEET_API_URL) {
+            const apiUrl = SHEET_API_URL();
+            if (!apiUrl) {
                 showToast("Set the Sheet API URL first.", "error");
-                sheetApiUrlInput.value = SHEET_API_URL;
+                sheetApiUrlInput.value = '';
                 guideModal.classList.add('open');
                 return;
             }
@@ -3201,7 +3239,7 @@ function reply(data) {
             btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Saving...';
 
             try {
-                const response = await fetch(SHEET_API_URL, {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     body: JSON.stringify({
                         action,
@@ -3362,7 +3400,13 @@ function reply(data) {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             
-            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
+            const iconMap = {
+                success: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                info: 'fa-circle-info',
+                warn: 'fa-triangle-exclamation'
+            };
+            const icon = iconMap[type] || 'fa-circle-info';
             toast.innerHTML = `
                 <i class="fa-solid ${icon}"></i>
                 <span>${message}</span>
