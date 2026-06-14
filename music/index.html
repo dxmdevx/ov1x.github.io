@@ -2234,7 +2234,11 @@ function reply(data) {
         let editingRowNumber = null;
         let editingOriginalSong = null;
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/gviz/tq?tqx=out:json';
-        let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || '';
+        let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || 'https://script.google.com/macros/s/AKfycbyj2WD-NOPutw0t2ubw8g-NmNE6IkCk-W1EIED6hS0PDehfETg-bnoIOoVea8vvMkpkjw/exec';
+        // Auto-save the default URL if not already set
+        if (!localStorage.getItem('fxf_sheet_api_url')) {
+            localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
+        }
 
         // Elements
         const connBadge = document.getElementById('connBadge');
@@ -3252,6 +3256,25 @@ function reply(data) {
                 .replace(/'/g, "\\'")
                 .replace(/"/g, '\\"')
                 .replace(/\n/g, '\\n');
+        }
+
+        function formatMaybeDate(date) {
+            if (!date) return 'Unknown';
+            if (typeof date === 'string') {
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return date;
+                date = d;
+            }
+            if (!(date instanceof Date)) return 'Unknown';
+            return date.toLocaleDateString('th-TH', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+            }) + ' ' + date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            });
         }
     </script>
 </body>
