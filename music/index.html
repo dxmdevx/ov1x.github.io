@@ -1511,7 +1511,10 @@
                 </button>
                 <button class="btn btn-primary" id="btnOpenGuide">
                     <i class="fa-solid fa-gear"></i> Sheet API
-                
+                </button>
+                <a class="btn" href="admin.html" title="Admin Panel" style="text-decoration:none;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </a>
             </div>
         </header>
 
@@ -1584,6 +1587,14 @@
                 <span class="filter-label">Filter:</span>
                 <button class="category-pill active" data-category="ALL">All</button>
                 <!-- Dynamically filled categories -->
+            </div>
+
+            <div class="filter-row" id="ownerFilterRow">
+                <span class="filter-label">Uploader:</span>
+                <select class="sort-select" id="ownerFilterSelect" style="min-width: 200px;">
+                    <option value="ALL">All Uploaders</option>
+                    <!-- Dynamically filled owners -->
+                </select>
             </div>
         </section>
 
@@ -1712,9 +1723,9 @@
     <div class="modal-overlay" id="guideModal">
         <div class="modal">
             <button class="modal-close" id="btnCloseGuide"><i class="fa-solid fa-xmark"></i></button>
-            <h2 class="modal-title">Setup Sheet Editing</h2>
+            <h2 class="modal-title">Setup Secure Access</h2>
             <div class="modal-content">
-                <p>Deploy this Google Apps Script as a Web App, then paste the Web App URL below. The site uses it to add, update, and delete rows after a valid code is entered.</p>
+                <p>This system now uses <strong>Google Apps Script Properties</strong> for secure access code storage (no JSONBin needed). Access codes are stored securely in Google's servers.</p>
                 <div class="edit-form">
                     <label>
                         Google Apps Script Web App URL
@@ -1724,40 +1735,70 @@
                 </div>
                 <ol>
                     <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank" style="color: var(--gold);">Open Spreadsheet</a>.</li>
+                    <li><strong>Make the sheet private</strong> - Click Share → Change to "Only you can access".</li>
                     <li>In the top menu, select <strong>Extensions</strong> &gt; <strong>Apps Script</strong>.</li>
                     <li>Delete any code in the editor and paste the script below.</li>
-                    <li>Deploy as a <strong>Web app</strong>, set access to <strong>Anyone</strong>, then copy the Web App URL.</li>
+                    <li>Deploy as a <strong>Web app</strong>, set "Who has access" to <strong>Anyone</strong>, then copy the Web App URL.</li>
+                    <li>Use the <a href="admin.html" target="_blank" style="color: var(--gold);">Admin Panel</a> to manage access codes (password: fxf-admin-2026).</li>
                 </ol>
                 <div class="code-block-wrapper">
                     <button class="btn-copy-code" id="btnCopyAppsScriptCode"><i class="fa-solid fa-copy"></i> Copy Script</button>
                     <pre><code id="appsScriptCode" style="color: var(--white); max-height: 260px;">var MAIN_SHEET = 'Sheet1';
 var TRASH_SHEET = 'Trash';
 var AUDIT_SHEET = 'Audit Log';
+var CODES_PROPERTY = 'FXF_ACCESS_CODES';
+
+// Get access codes from Properties (secure storage)
+function getAccessCodes() {
+  var json = PropertiesService.getScriptProperties().getProperty(CODES_PROPERTY);
+  if (!json) return [];
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    return [];
+  }
+}
+
+// Save access codes to Properties
+function saveAccessCodes(codes) {
+  PropertiesService.getScriptProperties().setProperty(CODES_PROPERTY, JSON.stringify(codes));
+}
+
+// Verify access code
+function verifyCode(code) {
+  var codes = getAccessCodes();
+  var found = codes.find(function(c) {
+    return String(c.code).trim() === String(code).trim();
+  });
+  return found ? { name: found.name, canEdit: found.canEdit } : null;
+}
 
 function doGet(e) {
   var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
-  if (action !== 'trash') return reply({ ok: false, error: 'Unknown action' });
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-  var requester = {
-    code: String((e.parameter && e.parameter.code) || '').trim(),
-    canEdit: String((e.parameter && e.parameter.canEdit) || '') === 'true'
-  };
-  if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
+  // Verify access code for all actions
+  var code = String((e.parameter && e.parameter.code) || '').trim();
+  var requester = verifyCode(code);
+  if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
 
-  var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
-    return requester.canEdit || String(row[4] || '').trim() === requester.code;
-  }).map(function(row) {
-    return {
-      id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
-      owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
-      updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
-      deletedReason: row[12]
-    };
-  });
+  if (action === 'trash') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
 
-  return reply({ ok: true, trash: rows });
+    var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
+      return requester.canEdit || String(row[4] || '').trim() === code;
+    }).map(function(row) {
+      return {
+        id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
+        owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
+        updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
+        deletedReason: row[12]
+      };
+    });
+    return reply({ ok: true, trash: rows });
+  }
+
+  return reply({ ok: false, error: 'Unknown action' });
 }
 
 function doPost(e) {
@@ -1772,13 +1813,13 @@ function doPost(e) {
     var action = String(body.action || '').toLowerCase();
     var song = body.song || {};
     var original = body.original || {};
-    var requester = {
-      code: String(body.code || '').trim(),
-      name: String(body.user || '').trim(),
-      canEdit: body.canEdit === true
-    };
 
-    if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
+    // Verify access code using secure Properties storage
+    var code = String(body.code || '').trim();
+    var requester = verifyCode(code);
+    if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
+    requester.code = code; // Keep code for row matching
+
     if (!action) return reply({ ok: false, error: 'Missing action' });
 
     ensureHeaders(sheet, mainHeaders());
@@ -1949,6 +1990,137 @@ function logAudit(sheet, action, id, name, requester) {
   sheet.appendRow([new Date(), action, id, name, requester.name, requester.code]);
 }
 
+// Access Code Management (for Admin Panel)
+function doGet(e) {
+  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
+
+  // Admin code management actions (no auth required for setup)
+  if (action === 'get_codes') {
+    return reply({ ok: true, codes: getAccessCodes() });
+  }
+
+  // Verify access code for all other actions
+  var code = String((e.parameter && e.parameter.code) || '').trim();
+  var requester = verifyCode(code);
+  if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
+
+  if (action === 'trash') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
+
+    var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
+      return requester.canEdit || String(row[4] || '').trim() === code;
+    }).map(function(row) {
+      return {
+        id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
+        owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
+        updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
+        deletedReason: row[12]
+      };
+    });
+    return reply({ ok: true, trash: rows });
+  }
+
+  return reply({ ok: false, error: 'Unknown action' });
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var body = JSON.parse((e.postData && e.postData.contents) || '{}');
+    var action = String(body.action || '').toLowerCase();
+
+    // Admin code management actions (no auth required for setup)
+    if (action === 'set_codes') {
+      var adminPassword = String(body.adminPassword || '').trim();
+      if (adminPassword !== 'fxf-admin-2026') {
+        return reply({ ok: false, error: 'Invalid admin password' });
+      }
+      var codes = body.codes || [];
+      saveAccessCodes(codes);
+      return reply({ ok: true });
+    }
+
+    // Verify access code for all other actions
+    var code = String(body.code || '').trim();
+    var requester = verifyCode(code);
+    if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
+    requester.code = code; // Keep code for row matching
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = getOrCreateSheet(ss, MAIN_SHEET, mainHeaders());
+    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
+    var audit = getOrCreateSheet(ss, AUDIT_SHEET, auditHeaders());
+    var song = body.song || {};
+    var original = body.original || {};
+
+    if (!action) return reply({ ok: false, error: 'Missing action' });
+
+    ensureHeaders(sheet, mainHeaders());
+    ensureHeaders(trash, trashHeaders());
+    ensureHeaders(audit, auditHeaders());
+
+    var id = String(song.id || '').trim();
+    var name = String(song.name || '').trim();
+    var category = String(song.category || '').trim();
+    var now = new Date();
+
+    if (action === 'add') {
+      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+      if (findRowById(sheet, id)) return reply({ ok: false, error: 'This ID already exists' });
+      createBackup(ss, sheet);
+      sheet.appendRow([id, name, category, now, requester.code, requester.name, requester.name, now, '', '']);
+      logAudit(audit, 'add', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'update') {
+      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
+      var loc = locateOwnedRow(sheet, original, requester);
+      if (!loc.ok) return reply(loc);
+
+      createBackup(ss, sheet);
+      var row = loc.row;
+      sheet.getRange(row, 1, 1, 10).setValues([[id, name, category, now, original.owner, original.ownerName, original.createdBy, original.createdAt, requester.name, now]]);
+      logAudit(audit, 'update', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'delete') {
+      var loc = locateOwnedRow(sheet, original, requester);
+      if (!loc.ok) return reply(loc);
+
+      createBackup(ss, sheet);
+      var row = loc.row;
+      var data = sheet.getRange(row, 1, 1, 10).getValues()[0];
+      sheet.deleteRow(row);
+      trash.appendRow([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], requester.name, now, 'Deleted via web']);
+      logAudit(audit, 'delete', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    if (action === 'restore') {
+      var loc = locateTrashRow(trash, original, requester);
+      if (!loc.ok) return reply(loc);
+
+      createBackup(ss, sheet);
+      var row = loc.row;
+      var data = loc.data;
+      trash.deleteRow(row);
+      sheet.appendRow([data[0], data[1], data[2], now, data[4], data[5], data[6], data[7], requester.name, now]);
+      logAudit(audit, 'restore', id, name, requester);
+      return reply({ ok: true });
+    }
+
+    return reply({ ok: false, error: 'Unknown action' });
+  } catch (err) {
+    return reply({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function reply(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
@@ -1981,7 +2153,13 @@ function reply(data) {
                     </label>
                     <label>
                         Category
-                        <input type="text" id="trackCategoryInput" placeholder="Chipeo">
+                        <input type="text" id="trackCategoryInput" placeholder="Chipeo" list="categorySuggestions">
+                        <datalist id="categorySuggestions">
+                            <option value="Chipeo">
+                            <option value="Sound Check">
+                            <option value="Thai Song">
+                            <option value="Thai Remix">
+                        </datalist>
                     </label>
                     <div class="edit-actions">
                         <button class="btn btn-danger" id="btnDeleteTrack" style="display:none;"><i class="fa-solid fa-trash"></i> Delete</button>
@@ -2120,10 +2298,8 @@ function reply(data) {
     <!-- Code System Script -->
     <script>
     (function() {
-        // JSONBin config — same as admin.html
-        const API_KEY = () => localStorage.getItem('fxf_api_key') || '';
-        const BIN_ID  = () => localStorage.getItem('fxf_bin_id')  || '';
-        const KEY_TYPE = () => localStorage.getItem('fxf_key_type') || 'master';
+        // Apps Script API config (secure storage in Google Properties)
+        const SHEET_API_URL = () => localStorage.getItem('fxf_sheet_api_url') || '';
         let currentUser = null; // { name, code, canEdit }
         let cachedCodes = null;
 
@@ -2198,17 +2374,19 @@ function reply(data) {
 
         async function loadCodes() {
             if (cachedCodes) return cachedCodes;
-            const k = API_KEY(); const b = BIN_ID();
-            if (!k || !b) return [];
-            const authHeader = KEY_TYPE() === 'access' ? 'X-Access-Key' : 'X-Master-Key';
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${b}/latest`, {
-                headers: { [authHeader]: k }
-            });
-            if (!res.ok) throw new Error('fetch fail');
-            const data = await res.json();
-            cachedCodes = data.record.codes || [];
-            setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
-            return cachedCodes;
+            const apiUrl = SHEET_API_URL();
+            if (!apiUrl) return [];
+            try {
+                const res = await fetch(`${apiUrl}?action=get_codes`);
+                if (!res.ok) throw new Error('fetch fail');
+                const data = await res.json();
+                cachedCodes = data.codes || [];
+                setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
+                return cachedCodes;
+            } catch (e) {
+                console.error('Failed to load codes:', e);
+                return [];
+            }
         }
 
         function dispatchUserEvent() {
@@ -2261,6 +2439,8 @@ function reply(data) {
         const btnGridView = document.getElementById('btnGridView');
         const btnTableView = document.getElementById('btnTableView');
         const categoriesFilterRow = document.getElementById('categoriesFilterRow');
+        const ownerFilterSelect = document.getElementById('ownerFilterSelect');
+        const categorySuggestions = document.getElementById('categorySuggestions');
 
         const loadingSkeleton = document.getElementById('loadingSkeleton');
         const emptyState = document.getElementById('emptyState');
@@ -2295,6 +2475,7 @@ function reply(data) {
         // Config variables
         let currentView = 'grid'; // 'grid' | 'table'
         let currentCategoryFilter = 'ALL';
+        let currentOwnerFilter = 'ALL';
         let currentSort = 'name-asc';
 
         // Dynamic category styles container
@@ -2302,12 +2483,12 @@ function reply(data) {
 
         // Fallback high-fidelity demo data
         const demoSongs = [
-            { id: "1098462719", name: "Chipeo Mega Remix 2026", category: "Chipeo", lastUpdated: "2026-06-07 09:12:00" },
-            { id: "9482716301", name: "Cyber Sound Check Ultra Bass", category: "Sound Check", lastUpdated: "2026-06-07 08:34:00" },
-            { id: "5183920192", name: "ฝนตกไหม - Thai Pop Edit", category: "Thai Song", lastUpdated: "2026-06-06 18:20:00" },
-            { id: "8827391029", name: "รถแห่สามช่า 2026 Nonstop", category: "Thai Remix", lastUpdated: "2026-06-05 21:05:00" },
-            { id: "2837491029", name: "Chipeo Vol. 4 (Bass Boosted)", category: "Chipeo", lastUpdated: "2026-06-07 09:15:22" },
-            { id: "1039482910", name: "Thai Remix Club Mix v2", category: "Thai Remix", lastUpdated: "2026-06-04 12:00:00" }
+            { id: "1098462719", name: "Chipeo Mega Remix 2026", category: "Chipeo", lastUpdated: "2026-06-07 09:12:00", ownerName: "DJ Max", createdBy: "DJ Max" },
+            { id: "9482716301", name: "Cyber Sound Check Ultra Bass", category: "Sound Check", lastUpdated: "2026-06-07 08:34:00", ownerName: "DJ Max", createdBy: "DJ Max" },
+            { id: "5183920192", name: "ฝนตกไหม - Thai Pop Edit", category: "Thai Song", lastUpdated: "2026-06-06 18:20:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" },
+            { id: "8827391029", name: "รถแห่สามช่า 2026 Nonstop", category: "Thai Remix", lastUpdated: "2026-06-05 21:05:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" },
+            { id: "2837491029", name: "Chipeo Vol. 4 (Bass Boosted)", category: "Chipeo", lastUpdated: "2026-06-07 09:15:22", ownerName: "DJ Max", createdBy: "DJ Max" },
+            { id: "1039482910", name: "Thai Remix Club Mix v2", category: "Thai Remix", lastUpdated: "2026-06-04 12:00:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" }
         ];
 
         // Init App
@@ -2366,6 +2547,12 @@ function reply(data) {
             // Sort Select
             sortSelect.addEventListener('change', () => {
                 currentSort = sortSelect.value;
+                filterAndRender();
+            });
+
+            // Owner Filter Select
+            ownerFilterSelect.addEventListener('change', () => {
+                currentOwnerFilter = ownerFilterSelect.value;
                 filterAndRender();
             });
 
@@ -2548,10 +2735,11 @@ function reply(data) {
             
             // 1. Calculate Stats
             statTotalTracks.innerText = allSongs.length;
-            
+
             const categoriesMap = new Map();
+            const ownersMap = new Map();
             let maxDate = null;
-            
+
             allSongs.forEach(s => {
                 if (s.category) {
                     const key = s.category.trim().toUpperCase();
@@ -2559,7 +2747,16 @@ function reply(data) {
                         categoriesMap.set(key, s.category.trim());
                     }
                 }
-                
+
+                // Build owners map from ownerName, createdBy, updatedBy
+                const ownerName = s.ownerName || s.createdBy || s.updatedBy;
+                if (ownerName) {
+                    const key = ownerName.trim();
+                    if (!ownersMap.has(key)) {
+                        ownersMap.set(key, ownerName.trim());
+                    }
+                }
+
                 if (s.lastUpdated) {
                     const d = new Date(s.lastUpdated);
                     if (!isNaN(d.getTime())) {
@@ -2611,6 +2808,32 @@ function reply(data) {
                 currentCategoryFilter = 'ALL';
                 allBtn.classList.add('active');
             }
+
+            // 3. Build Owner Filter Dropdown
+            const activeOwner = currentOwnerFilter;
+            ownerFilterSelect.innerHTML = '<option value="ALL">All Uploaders</option>';
+            Array.from(ownersMap.entries()).sort().forEach(([key, val]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.innerText = val;
+                if (activeOwner === key) {
+                    option.selected = true;
+                }
+                ownerFilterSelect.appendChild(option);
+            });
+
+            if (activeOwner !== 'ALL' && !ownersMap.has(activeOwner)) {
+                currentOwnerFilter = 'ALL';
+                ownerFilterSelect.value = 'ALL';
+            }
+
+            // 4. Update Category Suggestions Datalist
+            categorySuggestions.innerHTML = '';
+            Array.from(categoriesMap.values()).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                categorySuggestions.appendChild(option);
+            });
 
             filterAndRender();
         }
@@ -2671,18 +2894,23 @@ function reply(data) {
         // Filter, Sort, and Render UI lists
         function filterAndRender() {
             const query = searchInput.value.toLowerCase().trim();
-            
+
             // 1. Filter
             filteredSongs = allSongs.filter(song => {
-                const matchCategory = currentCategoryFilter === 'ALL' || 
+                const matchCategory = currentCategoryFilter === 'ALL' ||
                     (song.category && song.category.trim().toUpperCase() === currentCategoryFilter);
-                
-                const matchQuery = !query || 
+
+                const matchOwner = currentOwnerFilter === 'ALL' ||
+                    (song.ownerName && song.ownerName.trim() === currentOwnerFilter) ||
+                    (song.createdBy && song.createdBy.trim() === currentOwnerFilter) ||
+                    (song.updatedBy && song.updatedBy.trim() === currentOwnerFilter);
+
+                const matchQuery = !query ||
                     (song.id && song.id.toLowerCase().includes(query)) ||
                     (song.name && song.name.toLowerCase().includes(query)) ||
                     (song.category && song.category.toLowerCase().includes(query));
-                
-                return matchCategory && matchQuery;
+
+                return matchCategory && matchOwner && matchQuery;
             });
 
             // 2. Sort
