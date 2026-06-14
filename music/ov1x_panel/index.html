@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FXF Admin — Code Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 :root {
@@ -31,7 +31,7 @@ body::before {
 /* Login screen */
 #loginScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:1.5rem; }
 .login-box { background: rgba(10,10,10,0.95); border:1px solid var(--border); border-radius: var(--radius-lg); padding:2.5rem; width:100%; max-width:420px; display:flex; flex-direction:column; gap:1.25rem; }
-.login-box h1 { font-family: var(--font-mono); font-size:1rem; color: var(--gold); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.6rem; }
+.login-box h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: var(--gold); display:flex; align-items:center; gap:.6rem; }
 .login-box p { font-size:.85rem; color: var(--m1); }
 .field-label { font-family: var(--font-mono); font-size:.72rem; color: var(--m1); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem; }
 input[type=text], input[type=password] {
@@ -55,8 +55,8 @@ input:focus { border-color:var(--border-hover); box-shadow:0 0 10px rgba(196,163
 /* Main admin */
 #adminPanel { display:none; }
 .admin-header { display:flex; align-items:center; justify-content:space-between; padding:1.5rem 0; border-bottom:1px solid var(--border); margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
-.admin-header h1 { font-family:var(--font-mono); font-size:.9rem; color:var(--m1); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.5rem; }
-.admin-header h1 span { color:var(--gold); }
+.admin-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: var(--white); display:flex; align-items:center; gap:.5rem; }
+.admin-header h1 span { color:var(--gold); font-size: 1.4rem; font-weight: 400; }
 
 .section-title { font-family:var(--font-mono); font-size:.75rem; color:var(--m1); text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
 .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
@@ -140,22 +140,27 @@ input:checked + .slider::before { transform:translateX(20px); background:var(--g
 
     <!-- Apps Script Setup -->
     <div class="setup-hint" id="setupHint">
-        <strong>⚙️ First-time setup:</strong> This system stores codes securely in <strong>Google Apps Script Properties</strong> (free & secure).
-        Paste your <strong>Apps Script Web App URL</strong> below and click Save Config.
+        <strong>⚙️ System Configuration:</strong> This system stores codes securely in <strong>Google Apps Script Properties</strong> and syncs tracks with Google Sheets.
+        Paste your <strong>Apps Script Web App URL</strong> and <strong>Spreadsheet ID</strong> below and click Save Config.
         <br><br>
-        <div style="margin-top:.5rem;">
-            <div class="field-label">Apps Script Web App URL</div>
-            <input type="text" id="cfgApiKey" placeholder="https://script.google.com/macros/s/.../exec">
+        <div class="form-grid" style="margin-top:.5rem; margin-bottom: 0;">
+            <div>
+                <div class="field-label">Apps Script Web App URL</div>
+                <input type="text" id="cfgApiKey" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <div>
+                <div class="field-label">Google Spreadsheet ID or URL</div>
+                <input type="text" id="cfgSheetId" placeholder="1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8">
+            </div>
         </div>
         <button class="btn btn-sm" id="btnSaveCfg" style="margin-top:.75rem;"><i class="fa-solid fa-floppy-disk"></i> Save Config</button>
         <span id="cfgStatus" style="font-family:var(--font-mono);font-size:.72rem;color:var(--m2);margin-left:.75rem;"></span>
         <br><br>
-        <strong>⚠️ If you see CORS errors:</strong>
+        <strong>⚠️ Apps Script Deployment Requirements:</strong>
         <ul style="margin-top:.5rem;padding-left:1.2rem;">
-            <li>Deploy as <strong>Web app</strong> (not API executable)</li>
-            <li>Set <strong>Execute as: Me</strong></li>
-            <li>Set <strong>Who has access: Anyone</strong></li>
-            <li>Wait 1-2 minutes after deployment</li>
+            <li>Deploy as <strong>Web app</strong> (Execute as: <strong>Me</strong>, Access: <strong>Anyone</strong>)</li>
+            <li>Make sure to authorize all requested Google permissions upon deployment</li>
+            <li>Wait 1-2 minutes for Google changes to propagate before testing</li>
         </ul>
     </div>
 
@@ -190,6 +195,18 @@ input:checked + .slider::before { transform:translateX(20px); background:var(--g
         <div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading codes...</div>
     </div>
     <div class="status-bar" id="statusBar"></div>
+
+    <!-- Audit Log Section -->
+    <div class="section-title" style="margin-top:2rem;"><i class="fa-solid fa-file-invoice" style="color:var(--gold)"></i> System Audit Log</div>
+    <div id="auditLogContainer" style="background:rgba(10,10,10,.9); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.5rem; margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <span style="font-family:var(--font-mono); font-size:.72rem; color:var(--m1);">REAL-TIME ACTION TRACKING</span>
+            <button class="btn btn-sm" id="btnRefreshAudit"><i class="fa-solid fa-arrows-rotate"></i> Refresh Logs</button>
+        </div>
+        <div id="auditLogList" style="max-height: 350px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; padding-right: 0.5rem;">
+            <div class="empty-list" style="padding: 1rem;">Click Refresh to load system audit logs.</div>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -201,6 +218,7 @@ input:checked + .slider::before { transform:translateX(20px); background:var(--g
 const MASTER_PASS = 'fxf-admin-2026';
 
 let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || '';
+let SHEET_ID = localStorage.getItem('fxf_sheet_id') || '1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8';
 
 // ===== LOGIN =====
 document.getElementById('masterInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -213,6 +231,7 @@ function doLogin() {
         document.getElementById('adminPanel').style.display = 'block';
         loadCfgFromStorage();
         fetchCodes();
+        fetchAuditLog();
     } else {
         const err = document.getElementById('loginErr');
         err.style.display = 'block';
@@ -229,12 +248,23 @@ document.getElementById('btnLogout').addEventListener('click', () => {
 // ===== CONFIG =====
 function loadCfgFromStorage() {
     document.getElementById('cfgApiKey').value = SHEET_API_URL;
+    document.getElementById('cfgSheetId').value = SHEET_ID;
 }
 
 document.getElementById('btnSaveCfg').addEventListener('click', async () => {
     SHEET_API_URL = normalizeInput(document.getElementById('cfgApiKey').value);
     localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
     document.getElementById('cfgApiKey').value = SHEET_API_URL;
+
+    const rawIdVal = normalizeInput(document.getElementById('cfgSheetId').value);
+    let extractedId = rawIdVal;
+    const urlMatch = rawIdVal.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (urlMatch) {
+        extractedId = urlMatch[1];
+    }
+    SHEET_ID = extractedId;
+    localStorage.setItem('fxf_sheet_id', SHEET_ID);
+    document.getElementById('cfgSheetId').value = SHEET_ID;
 
     const btn = document.getElementById('btnSaveCfg');
     const status = document.getElementById('cfgStatus');
@@ -244,6 +274,7 @@ document.getElementById('btnSaveCfg').addEventListener('click', async () => {
     status.textContent = 'Testing Apps Script...';
     try {
         await fetchCodes(true);
+        await fetchAuditLog();
         status.style.color = 'var(--green)';
         status.textContent = 'Saved and connected!';
         setTimeout(()=> status.textContent = '', 2500);
@@ -375,6 +406,86 @@ async function getCurrentCodes() {
     return data.codes || [];
 }
 
+// ===== AUDIT LOGS =====
+async function fetchAuditLog() {
+    const list = document.getElementById('auditLogList');
+    if (!SHEET_API_URL) {
+        list.innerHTML = '<div class="empty-list">⚠️ Set your Apps Script Web App URL first.</div>';
+        return;
+    }
+    list.innerHTML = '<div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading audit logs...</div>';
+    try {
+        const res = await fetch(`${SHEET_API_URL}?action=get_audit_log&adminPassword=${encodeURIComponent(MASTER_PASS)}`);
+        if (!res.ok) throw new Error('Failed to connect to Apps Script');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Failed to fetch logs');
+        renderAuditLog(data.logs || []);
+    } catch(e) {
+        list.innerHTML = `<div class="empty-list">❌ Error: ${e.message}</div>`;
+    }
+}
+
+function renderAuditLog(logs) {
+    const list = document.getElementById('auditLogList');
+    if (!logs.length) {
+        list.innerHTML = '<div class="empty-list">No audit logs found.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    
+    const getActionColor = (action) => {
+        switch(String(action).toLowerCase()) {
+            case 'add': return 'var(--green)';
+            case 'update': return 'var(--gold)';
+            case 'delete': return 'var(--red)';
+            case 'restore': return '#38bdf8'; // Sky blue
+            default: return 'var(--m1)';
+        }
+    };
+    
+    const getActionIcon = (action) => {
+        switch(String(action).toLowerCase()) {
+            case 'add': return 'fa-circle-plus';
+            case 'update': return 'fa-pen-to-square';
+            case 'delete': return 'fa-trash-can';
+            case 'restore': return 'fa-trash-arrow-up';
+            default: return 'fa-circle-question';
+        }
+    };
+
+    logs.forEach(log => {
+        const item = document.createElement('div');
+        item.style.borderBottom = '1px solid var(--border)';
+        item.style.paddingBottom = '0.5rem';
+        item.style.marginBottom = '0.5rem';
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.gap = '0.25rem';
+        
+        const actionColor = getActionColor(log.action);
+        const actionIcon = getActionIcon(log.action);
+        const logDateStr = log.time ? new Date(log.time).toLocaleString() : 'N/A';
+
+        item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--m1);">
+                <span><i class="fa-solid fa-clock"></i> ${escH(logDateStr)}</span>
+                <span style="font-weight: 600; color: ${actionColor}; text-transform: uppercase; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="fa-solid ${actionIcon}"></i> ${escH(log.action)}
+                </span>
+            </div>
+            <div style="color: var(--white); font-size: 0.8rem; font-family: var(--font-sans);">
+                ID: <span style="color: var(--gold); font-family: var(--font-mono); font-size: 0.75rem;">${escH(log.id)}</span> | Name: <strong>${escH(log.name)}</strong>
+            </div>
+            <div style="color: var(--m1); font-size: 0.72rem;">
+                By: <span style="color: var(--white);">${escH(log.user)}</span> (Code: <code style="color: var(--gold-b);">${escH(log.code)}</code>)
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+document.getElementById('btnRefreshAudit').addEventListener('click', fetchAuditLog);
+
 // ===== UTILS =====
 function escH(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -390,4 +501,3 @@ function toast(msg, ok=true) {
 </script>
 </body>
 </html>
- 
