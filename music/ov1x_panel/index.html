@@ -1,3345 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FXF Track Sync Controller</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            /* Theme Colors (ov1x.is-a.dev style) */
-            --gold: #c4a35a;
-            --gold-b: #d4b86a;
-            --gold-dim: rgba(196, 163, 90, 0.18);
-            --gold-glow: rgba(196, 163, 90, 0.055);
-            --gold-sub: rgba(196, 163, 90, 0.07);
-            --gold-hi: rgba(196, 163, 90, 0.38);
-            
-            --bg: #060606;
-            --card: rgba(10, 10, 10, 0.95);
-            --card-hover: rgba(15, 15, 15, 0.98);
-            
-            --border: rgba(196, 163, 90, 0.13);
-            --border-hover: rgba(196, 163, 90, 0.35);
-            --border2: rgba(255, 255, 255, 0.028);
-            
-            --white: #f0ece4;
-            --m1: rgba(240, 236, 228, 0.45);
-            --m2: rgba(240, 236, 228, 0.20);
-            --m3: rgba(240, 236, 228, 0.10);
-            
-            /* Status colors */
-            --online: #3ba55c;
-            --offline: #4e5761;
-            
-            /* Fonts */
-            --font-display: 'Kanit', sans-serif;
-            --font-sans: 'Kanit', sans-serif;
-            --font-mono: 'DM Mono', monospace;
-            
-            /* Shadows & Effects */
-            --card-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.8);
-            --glow-shadow: 0 0 20px rgba(196, 163, 90, 0.12);
-            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-        }
-
-        /* Reset and Base Styles */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--white);
-            font-family: var(--font-sans);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Film grain noise overlay — ov1x signature texture */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: 9;
-            pointer-events: none;
-            opacity: 0.055;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            background-size: 200px 200px;
-            mix-blend-mode: overlay;
-        }
-
-        /* Ambient glow blobs — colored atmospheric spots */
-        .ambient-blobs {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .ambient-blobs .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.07;
-            animation: blob-drift 18s ease-in-out infinite alternate;
-        }
-
-        .ambient-blobs .blob-1 {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, #c4a35a, transparent);
-            top: -150px;
-            left: -100px;
-            animation-delay: 0s;
-        }
-
-        .ambient-blobs .blob-2 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, #d4b86a, transparent);
-            bottom: -100px;
-            right: -80px;
-            animation-delay: -6s;
-        }
-
-        .ambient-blobs .blob-3 {
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, #c4a35a, transparent);
-            top: 40%;
-            left: 50%;
-            transform: translateX(-50%);
-            animation-delay: -12s;
-            opacity: 0.035;
-        }
-
-        @keyframes blob-drift {
-            0% { transform: scale(1) translate(0, 0); }
-            33% { transform: scale(1.05) translate(30px, -20px); }
-            66% { transform: scale(0.97) translate(-20px, 30px); }
-            100% { transform: scale(1.02) translate(15px, -10px); }
-        }
-
-        /* Ambient Background Canvas & Vignette */
-        #bg-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .vignette {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.95) 100%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Thin horizontal divider line — ov1x style */
-        .section-divider {
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--border), transparent);
-            margin: 0;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(196, 163, 90, 0.1);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(196, 163, 90, 0.3);
-        }
-
-        /* Wrapper Container */
-        .container {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 3rem 1.5rem 2rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 2.5rem;
-            z-index: 2;
-            position: relative;
-        }
-
-        /* Hero header — centered ov1x style */
-        .hero {
-            text-align: center;
-            padding: 3rem 0 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            position: relative;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--border), transparent);
-        }
-
-        .hero-eyebrow {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--m2);
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .hero-eyebrow::before,
-        .hero-eyebrow::after {
-            content: '';
-            display: block;
-            width: 30px;
-            height: 1px;
-            background: var(--border-hover);
-        }
-
-        .hero-title {
-            font-family: var(--font-display);
-            font-size: clamp(3rem, 7vw, 5.5rem);
-            font-weight: 300;
-            letter-spacing: 0.08em;
-            color: var(--white);
-            line-height: 1;
-            text-transform: uppercase;
-        }
-
-        .hero-title span {
-            color: var(--gold);
-            font-style: italic;
-            font-weight: 400;
-        }
-
-        .hero-subtitle {
-            font-family: var(--font-display);
-            font-style: italic;
-            font-size: 1.1rem;
-            color: var(--m1);
-            font-weight: 300;
-            margin-top: 0.25rem;
-        }
-
-        .hero-meta {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            margin-top: 1.25rem;
-        }
-
-        /* Header Navigation bar (top, minimal) */
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo-icon {
-            font-size: 1.2rem;
-            color: var(--gold);
-            opacity: 0.7;
-        }
-
-        .logo-text h1 {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            font-weight: 400;
-            letter-spacing: 0.12em;
-            color: var(--m1);
-            text-transform: uppercase;
-        }
-
-        .logo-text p {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--m2);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.15rem;
-            text-transform: uppercase;
-        }
-
-        .connection-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.6rem;
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--gold);
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .connection-badge.disconnected {
-            border-color: rgba(237, 66, 69, 0.2);
-            background: rgba(237, 66, 69, 0.05);
-            color: var(--dnd, #ed4245);
-        }
-
-        .pulse-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--online);
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 8px var(--online);
-        }
-
-        .connection-badge.disconnected .pulse-dot {
-            background-color: #ed4245;
-            box-shadow: 0 0 8px #ed4245;
-        }
-        
-        .pulse-dot.pulse {
-            animation: pulse-animation 2s infinite;
-        }
-
-        @keyframes pulse-animation {
-            0% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.7);
-            }
-            70% {
-                transform: scale(1);
-                box-shadow: 0 0 0 6px rgba(59, 165, 92, 0);
-            }
-            100% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(59, 165, 92, 0);
-            }
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        /* Buttons (ov1x.is-a.dev style) */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--gold);
-            padding: 0.65rem 1.25rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: var(--gold-dim);
-            border-color: var(--border-hover);
-            color: var(--gold-b);
-        }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .btn-primary {
-            background: var(--gold);
-            border: 1px solid var(--gold);
-            color: var(--bg);
-            font-weight: 500;
-        }
-
-        .btn-primary:hover {
-            background: var(--gold-b);
-            border-color: var(--gold-b);
-            color: var(--bg);
-            box-shadow: 0 0 15px rgba(196, 163, 90, 0.3);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.08);
-            border-color: rgba(239, 68, 68, 0.24);
-            color: #ef4444;
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.16);
-            border-color: rgba(239, 68, 68, 0.45);
-            color: #f87171;
-        }
-
-        .spin {
-            animation: spin-animation 1s linear infinite;
-        }
-
-        @keyframes spin-animation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Info Grid (Stats cards) */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            background: var(--border);
-        }
-
-        .stat-card {
-            background: rgba(8, 8, 8, 0.92);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border: none;
-            border-radius: 0;
-            padding: 1.75rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            transition: var(--transition-smooth);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at top, var(--gold-glow) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .stat-card:hover {
-            border-color: var(--border-hover);
-            box-shadow: var(--card-shadow);
-        }
-
-        .stat-icon {
-            font-size: 1.5rem;
-            width: 44px;
-            height: 44px;
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--gold);
-        }
-
-        .stat-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            z-index: 2;
-        }
-
-        .stat-label {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--m1);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .stat-value {
-            font-family: var(--font-display);
-            font-size: 2rem;
-            font-weight: 500;
-            color: var(--white);
-        }
-
-        .stat-subtitle {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--m2);
-            text-transform: uppercase;
-        }
-
-        /* Controls Section */
-        .controls-container {
-            background: rgba(8, 8, 8, 0.9);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .search-row {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-wrapper {
-            position: relative;
-            flex-grow: 1;
-            min-width: 260px;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 1.25rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--m2);
-            pointer-events: none;
-            transition: var(--transition-smooth);
-        }
-
-        .search-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border);
-            color: var(--white);
-            padding: 0.75rem 1rem 0.75rem 2.75rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-sans);
-            font-size: 0.95rem;
-            transition: var(--transition-smooth);
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--border-hover);
-            box-shadow: 0 0 10px rgba(196, 163, 90, 0.1);
-            background: rgba(0, 0, 0, 0.6);
-        }
-
-        .search-input:focus + .search-icon {
-            color: var(--gold);
-        }
-
-        .keyboard-hint {
-            position: absolute;
-            right: 1.25rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--m2);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-family: var(--font-mono);
-            pointer-events: none;
-        }
-
-        .view-actions {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .sort-select {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border);
-            color: var(--white);
-            padding: 0.75rem 2rem 0.75rem 1rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            outline: none;
-            transition: var(--transition-smooth);
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23c4a35a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 0.85rem;
-            min-width: 170px;
-        }
-
-        .sort-select:focus {
-            border-color: var(--border-hover);
-        }
-
-        .toggle-group {
-            display: inline-flex;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border);
-            padding: 0.2rem;
-            border-radius: var(--radius-sm);
-        }
-
-        .toggle-btn {
-            background: transparent;
-            border: none;
-            color: var(--m2);
-            padding: 0.5rem 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            font-size: 0.85rem;
-        }
-
-        .toggle-btn:hover {
-            color: var(--m1);
-        }
-
-        .toggle-btn.active {
-            background: var(--gold-sub);
-            color: var(--gold);
-            border: 1px solid var(--border);
-        }
-
-        /* Filter Categories Pills */
-        .filter-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            overflow-x: auto;
-            padding-bottom: 0.25rem;
-            scrollbar-width: thin;
-        }
-
-        .filter-label {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--m1);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
-        }
-
-        .category-pill {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border);
-            color: var(--m1);
-            padding: 0.45rem 1.1rem;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            white-space: nowrap;
-        }
-
-        .category-pill:hover {
-            border-color: var(--border-hover);
-            color: var(--white);
-        }
-
-        .category-pill.active {
-            background: var(--gold-sub);
-            border-color: var(--gold);
-            color: var(--gold-b);
-            font-weight: 500;
-            box-shadow: 0 0 10px rgba(196, 163, 90, 0.1);
-        }
-
-        /* Song Card List (Grid View) */
-        .songs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 1.25rem;
-        }
-
-        /* Custom rotating border beam effect (from reference) */
-        @property --angle {
-            syntax: '<angle>';
-            initial-value: 0deg;
-            inherits: false;
-        }
-
-        .song-card {
-            background: rgba(8, 8, 8, 0.85);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border: 1px solid rgba(196, 163, 90, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            transition: var(--transition-smooth);
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            overflow: hidden;
-        }
-
-        /* Subtle inner-top edge highlight — gives glass look */
-        .song-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            width: 80%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
-            pointer-events: none;
-        }
-
-        .song-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at 50% 0%, rgba(196,163,90,0.04) 0%, transparent 65%);
-            pointer-events: none;
-            border-radius: var(--radius-lg);
-        }
-
-        .song-card:hover {
-            border-color: rgba(196, 163, 90, 0.28);
-            box-shadow: 0 16px 48px rgba(0,0,0,0.9), 0 0 0 1px rgba(196,163,90,0.07) inset;
-        }
-
-        .song-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-            z-index: 2;
-        }
-
-        .song-id-badge {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            color: var(--m1);
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            text-transform: uppercase;
-        }
-
-        .song-id-badge:hover {
-            color: var(--gold);
-            border-color: var(--border-hover);
-            background: var(--gold-sub);
-        }
-
-        .song-category-tag {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            font-weight: 500;
-            padding: 0.25rem 0.65rem;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            background: var(--tag-bg, var(--gold-sub));
-            color: var(--tag-text, var(--gold));
-            border: 1px solid var(--tag-border, var(--border));
-        }
-
-        .song-title {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 400;
-            line-height: 1.3;
-            color: var(--white);
-            word-break: break-word;
-            flex-grow: 1;
-            z-index: 2;
-        }
-
-        .song-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-top: auto;
-            border-top: 1px solid var(--border2);
-            padding-top: 1rem;
-            font-size: 0.75rem;
-            color: var(--m2);
-            z-index: 2;
-        }
-
-        .song-date {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            color: var(--m2);
-        }
-
-        .song-meta-stack {
-            display: grid;
-            gap: 0.35rem;
-        }
-
-        .song-owner {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            font-size: 0.68rem;
-            color: var(--m1);
-        }
-
-        .copy-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .btn-copy-lua {
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--gold);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 0.45rem 0.8rem;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-        }
-
-        .btn-copy-lua:hover {
-            background: var(--gold-dim);
-            color: var(--gold-b);
-            border-color: var(--border-hover);
-        }
-
-        .btn-copy-lua:active {
-            transform: scale(0.95);
-        }
-
-        .btn-copy-lua.copied {
-            background: var(--gold) !important;
-            color: var(--bg) !important;
-            border-color: var(--gold) !important;
-            box-shadow: 0 0 10px rgba(196, 163, 90, 0.3);
-        }
-
-        .btn-edit-track {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: var(--border);
-            color: var(--m1);
-        }
-
-        .btn-edit-track:hover {
-            color: var(--gold-b);
-            border-color: var(--border-hover);
-        }
-
-        .edit-form {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .edit-form label {
-            display: grid;
-            gap: 0.4rem;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            color: var(--m1);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .edit-form input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border);
-            color: var(--white);
-            padding: 0.85rem 1rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .edit-form input:focus {
-            border-color: var(--border-hover);
-            box-shadow: 0 0 12px rgba(196, 163, 90, 0.12);
-        }
-
-        .edit-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-top: 0.25rem;
-        }
-
-        .trash-list {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .trash-item {
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.03);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            display: grid;
-            gap: 0.7rem;
-        }
-
-        .trash-title {
-            color: var(--white);
-            font-weight: 600;
-            line-height: 1.35;
-        }
-
-        .trash-meta {
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            color: var(--m1);
-            text-transform: uppercase;
-            line-height: 1.6;
-        }
-
-        /* Song Table View */
-        .table-wrapper {
-            background: var(--card);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        th {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 1.1rem 1.5rem;
-            font-family: var(--font-mono);
-            font-weight: 500;
-            color: var(--m1);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 1.1rem 1.5rem;
-            border-bottom: 1px solid var(--border2);
-            vertical-align: middle;
-            color: var(--m1);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tr {
-            transition: var(--transition-smooth);
-        }
-
-        tr:hover {
-            background: rgba(196, 163, 90, 0.02);
-        }
-
-        /* Code Preview Sidebar (For bulk preview/Lua table) */
-        .preview-pane {
-            background: rgba(8, 8, 8, 0.92);
-            backdrop-filter: blur(24px) saturate(1.4);
-            -webkit-backdrop-filter: blur(24px) saturate(1.4);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .preview-title {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 400;
-            color: var(--white);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .preview-body {
-            position: relative;
-        }
-
-        pre {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 1.25rem;
-            overflow-x: auto;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--gold-b);
-            max-height: 250px;
-            scrollbar-width: thin;
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            z-index: 1000;
-        }
-
-        .toast {
-            background: rgba(10, 10, 10, 0.98);
-            border: 1px solid var(--border);
-            color: var(--white);
-            padding: 1rem 1.25rem;
-            border-radius: var(--radius-md);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transform: translateY(100px);
-            opacity: 0;
-            animation: slide-in 0.4s forwards cubic-bezier(0.25, 0.8, 0.25, 1);
-            min-width: 280px;
-        }
-
-        .toast.success {
-            border-color: var(--gold);
-        }
-
-        .toast.success i {
-            color: var(--gold);
-        }
-
-        .toast.info i {
-            color: var(--m1);
-        }
-
-        @keyframes slide-in {
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .toast.fade-out {
-            animation: fade-out 0.4s forwards cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        @keyframes fade-out {
-            to {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-        }
-
-        /* Modal Guide */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(8px);
-            z-index: 1100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-overlay.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal {
-            background: rgba(8, 8, 8, 0.97);
-            backdrop-filter: blur(40px) saturate(1.5);
-            -webkit-backdrop-filter: blur(40px) saturate(1.5);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            width: 90%;
-            max-width: 650px;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 2.5rem;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(196,163,90,0.06) inset;
-            position: relative;
-            transform: translateY(30px);
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .modal-overlay.open .modal {
-            transform: translateY(0);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            background: none;
-            border: none;
-            color: var(--m1);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-        }
-
-        .modal-close:hover {
-            color: var(--white);
-        }
-
-        .modal-title {
-            font-family: var(--font-display);
-            font-size: 2rem;
-            font-weight: 400;
-            margin-bottom: 1.5rem;
-            color: var(--white);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .modal-content {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            line-height: 1.6;
-            color: var(--m1);
-            font-size: 0.95rem;
-        }
-
-        .modal-content a {
-            color: var(--gold);
-            text-decoration: none;
-        }
-        
-        .modal-content a:hover {
-            text-decoration: underline;
-        }
-
-        .modal-content h3 {
-            color: var(--white);
-            font-family: var(--font-display);
-            font-size: 1.3rem;
-            font-weight: 400;
-            margin-top: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .modal-content ol {
-            padding-left: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .code-block-wrapper {
-            position: relative;
-            margin-top: 0.5rem;
-        }
-
-        .btn-copy-code {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            background: var(--gold-sub);
-            border: 1px solid var(--border);
-            color: var(--gold);
-            padding: 0.35rem 0.6rem;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-        }
-
-        .btn-copy-code:hover {
-            color: var(--gold-b);
-            border-color: var(--border-hover);
-            background: var(--gold-dim);
-        }
-
-        /* Skeleton Loading Screen */
-        .skeleton-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            pointer-events: none;
-        }
-
-        .skeleton-block {
-            background: linear-gradient(90deg, rgba(196,163,90,0.02) 25%, rgba(196,163,90,0.06) 50%, rgba(196,163,90,0.02) 75%);
-            background-size: 200% 100%;
-            animation: skeleton-load 1.5s infinite;
-            border-radius: 4px;
-        }
-
-        @keyframes skeleton-load {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 5rem 2rem;
-            background: rgba(8, 8, 8, 0.85);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.25rem;
-        }
-
-        .empty-icon {
-            font-size: 2.5rem;
-            color: var(--m2);
-            background: var(--gold-sub);
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-        }
-
-        .empty-state h3 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 400;
-            color: var(--white);
-            text-transform: uppercase;
-        }
-
-        .empty-state p {
-            font-size: 0.9rem;
-            color: var(--m1);
-            max-width: 400px;
-        }
-
-        /* Footer */
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 2rem 1.5rem;
-            text-align: center;
-            color: var(--m2);
-            font-size: 0.75rem;
-            margin-top: auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            max-width: 1200px;
-            width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            z-index: 2;
-            position: relative;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-        }
-
-        footer a {
-            color: var(--gold);
-            text-decoration: none;
-            transition: var(--transition-smooth);
-        }
-
-        footer a:hover {
-            color: var(--gold-b);
-            text-decoration: underline;
-        }
-
-        /* Live Clock */
-        .live-clock {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.1rem;
-        }
-        .clock-time {
-            font-family: var(--font-mono);
-            font-size: 1.35rem;
-            font-weight: 500;
-            color: var(--white);
-            letter-spacing: 0.05em;
-            line-height: 1;
-        }
-        .clock-time .colon {
-            animation: blink-colon 1s step-end infinite;
-            color: var(--gold);
-        }
-        @keyframes blink-colon {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.15; }
-        }
-        .clock-date {
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            color: var(--m2);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        .clock-tz {
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
-            color: var(--m3);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        /* Code Login System */
-        .code-modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.92);
-            backdrop-filter: blur(8px);
-            z-index: 1200;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .code-modal-overlay.open { opacity: 1; pointer-events: auto; }
-        .code-modal {
-            background: rgba(8,8,8,0.97);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 2.25rem;
-            width: 90%; max-width: 420px;
-            display: flex; flex-direction: column; gap: 1.25rem;
-            transform: translateY(20px);
-            transition: transform 0.35s cubic-bezier(0.25,0.8,0.25,1);
-            box-shadow: 0 24px 64px rgba(0,0,0,0.9);
-        }
-        .code-modal-overlay.open .code-modal { transform: translateY(0); }
-        .code-modal-title {
-            font-family: var(--font-mono);
-            font-size: 0.85rem; color: var(--gold);
-            text-transform: uppercase; letter-spacing: 0.1em;
-            display: flex; align-items: center; gap: 0.6rem;
-        }
-        .code-input {
-            width: 100%; background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border); color: var(--white);
-            padding: 0.85rem 1rem; border-radius: var(--radius-sm);
-            font-family: var(--font-mono); font-size: 1rem;
-            letter-spacing: 0.12em; text-align: center;
-            transition: var(--transition-smooth); outline: none;
-        }
-        .code-input:focus { border-color: var(--border-hover); box-shadow: 0 0 12px rgba(196,163,90,0.12); }
-        .code-err {
-            font-family: var(--font-mono); font-size: 0.75rem;
-            color: #ef4444; text-align: center; display: none;
-        }
-        .code-user-badge {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.3rem 0.75rem;
-            background: rgba(196,163,90,0.1);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-family: var(--font-mono); font-size: 0.72rem;
-            color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em;
-            cursor: pointer; transition: var(--transition-smooth);
-        }
-        .code-user-badge:hover { background: var(--gold-dim); border-color: var(--border-hover); }
-        .code-user-badge.logged-out { color: var(--m2); border-color: var(--border); background: transparent; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container { padding: 1.5rem 1rem; }
-            header { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
-            .header-actions { width: 100%; justify-content: space-between; }
-            .search-row { flex-direction: column; align-items: stretch; }
-            .view-actions { justify-content: space-between; }
-            .sort-select { flex-grow: 1; }
-            .toast-container { left: 1rem; right: 1rem; bottom: 1rem; }
-            .live-clock { display: none; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FXF Admin — Code Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --gold: #c4a35a; --gold-b: #d4b86a;
+    --gold-dim: rgba(196,163,90,0.18); --gold-sub: rgba(196,163,90,0.07);
+    --bg: #060606; --card: rgba(10,10,10,0.95);
+    --border: rgba(196,163,90,0.13); --border-hover: rgba(196,163,90,0.35);
+    --white: #f0ece4; --m1: rgba(240,236,228,0.45); --m2: rgba(240,236,228,0.20);
+    --red: #ef4444; --green: #22c55e;
+    --font-sans: 'Outfit', sans-serif; --font-mono: 'DM Mono', monospace;
+    --radius-lg: 20px; --radius-md: 12px; --radius-sm: 8px;
+    --transition: all 0.3s cubic-bezier(0.25,0.8,0.25,1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--white); font-family: var(--font-sans); min-height: 100vh; }
+body::before {
+    content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.04;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size:200px; mix-blend-mode:overlay;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+
+/* Login screen */
+#loginScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; gap:1.5rem; }
+.login-box { background: rgba(10,10,10,0.95); border:1px solid var(--border); border-radius: var(--radius-lg); padding:2.5rem; width:100%; max-width:420px; display:flex; flex-direction:column; gap:1.25rem; }
+.login-box h1 { font-family: var(--font-mono); font-size:1rem; color: var(--gold); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.6rem; }
+.login-box p { font-size:.85rem; color: var(--m1); }
+.field-label { font-family: var(--font-mono); font-size:.72rem; color: var(--m1); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem; }
+input[type=text], input[type=password] {
+    width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:var(--white);
+    padding:.75rem 1rem; border-radius:var(--radius-sm); font-family:var(--font-mono); font-size:.9rem;
+    transition:var(--transition); outline:none;
+}
+input:focus { border-color:var(--border-hover); box-shadow:0 0 10px rgba(196,163,90,.1); }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+    background:var(--gold-sub); border:1px solid var(--border); color:var(--gold);
+    padding:.65rem 1.25rem; border-radius:var(--radius-sm); font-family:var(--font-mono);
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:var(--transition); }
+.btn:hover { background:var(--gold-dim); border-color:var(--border-hover); }
+.btn-primary { background:var(--gold); border-color:var(--gold); color:var(--bg); font-weight:600; width:100%; padding:.8rem; }
+.btn-primary:hover { background:var(--gold-b); border-color:var(--gold-b); box-shadow:0 0 15px rgba(196,163,90,.3); }
+.btn-danger { background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.25); color:var(--red); }
+.btn-danger:hover { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.5); }
+.btn-sm { padding:.35rem .75rem; font-size:.72rem; }
+.err-msg { color:var(--red); font-size:.8rem; font-family:var(--font-mono); display:none; }
+
+/* Main admin */
+#adminPanel { display:none; }
+.admin-header { display:flex; align-items:center; justify-content:space-between; padding:1.5rem 0; border-bottom:1px solid var(--border); margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+.admin-header h1 { font-family:var(--font-mono); font-size:.9rem; color:var(--m1); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:.5rem; }
+.admin-header h1 span { color:var(--gold); }
+
+.section-title { font-family:var(--font-mono); font-size:.75rem; color:var(--m1); text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* Add code form */
+.add-form { background:rgba(10,10,10,.9); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.75rem; margin-bottom:2rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+@media(max-width:580px){ .form-grid { grid-template-columns:1fr; } }
+.toggle-row { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+.toggle-label { font-family:var(--font-mono); font-size:.78rem; color:var(--m1); text-transform:uppercase; letter-spacing:.04em; }
+.toggle { position:relative; display:inline-block; width:44px; height:24px; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; inset:0; background:rgba(255,255,255,.1); border:1px solid var(--border); border-radius:12px; cursor:pointer; transition:var(--transition); }
+.slider::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:var(--m2); border-radius:50%; transition:var(--transition); }
+input:checked + .slider { background:rgba(196,163,90,.2); border-color:var(--gold); }
+input:checked + .slider::before { transform:translateX(20px); background:var(--gold); }
+
+/* Code list */
+.code-list { display:flex; flex-direction:column; gap:.75rem; }
+.code-item { background:rgba(10,10,10,.9); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.1rem 1.4rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; transition:var(--transition); }
+.code-item:hover { border-color:var(--border-hover); }
+.code-info { display:flex; flex-direction:column; gap:.3rem; }
+.code-name { font-weight:600; font-size:.95rem; }
+.code-value { font-family:var(--font-mono); font-size:.78rem; color:var(--gold); background:var(--gold-sub); border:1px solid var(--border); padding:.15rem .5rem; border-radius:4px; display:inline-block; }
+.code-perms { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.25rem; }
+.perm-badge { font-family:var(--font-mono); font-size:.68rem; padding:.15rem .5rem; border-radius:4px; text-transform:uppercase; letter-spacing:.04em; }
+.perm-yes { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25); color:var(--green); }
+.perm-no { background:rgba(255,255,255,.04); border:1px solid var(--border); color:var(--m2); }
+.code-actions { display:flex; gap:.5rem; }
+
+.status-bar { font-family:var(--font-mono); font-size:.75rem; color:var(--m2); text-align:center; padding:.75rem; }
+.loading-spin { display:inline-block; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Setup hint */
+.setup-hint { background:rgba(196,163,90,.05); border:1px solid rgba(196,163,90,.15); border-radius:var(--radius-md); padding:1.25rem; margin-bottom:1.5rem; font-size:.83rem; line-height:1.6; color:var(--m1); }
+.setup-hint strong { color:var(--gold); }
+.setup-hint code { background:rgba(0,0,0,.4); padding:.1rem .35rem; border-radius:3px; font-family:var(--font-mono); font-size:.78rem; color:var(--gold-b); }
+
+.empty-list { text-align:center; padding:2.5rem; color:var(--m2); font-family:var(--font-mono); font-size:.8rem; }
+.back-link { color:var(--gold); font-family:var(--font-mono); font-size:.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:.4rem; transition:var(--transition); }
+.back-link:hover { color:var(--gold-b); }
+
+/* Toast */
+.toast-c { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:.6rem; z-index:999; }
+.toast { background:rgba(10,10,10,.98); border:1px solid var(--border); color:var(--white); padding:.85rem 1.1rem; border-radius:var(--radius-md); display:flex; align-items:center; gap:.6rem; font-size:.83rem; min-width:240px; animation:slide-up .35s forwards; }
+.toast.ok { border-color:var(--gold); }
+.toast.ok i { color:var(--gold); }
+.toast.fail { border-color:rgba(239,68,68,.4); }
+.toast.fail i { color:var(--red); }
+@keyframes slide-up { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+</style>
 </head>
 <body>
 
-    <!-- Particle Background Canvas -->
-    <canvas id="bg-particles"></canvas>
-
-    <!-- Ambient gold glow blobs -->
-    <div class="ambient-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h1><i class="fa-solid fa-shield-halved"></i> FXF Admin</h1>
+        <p>Enter master admin password to manage access codes.</p>
+        <div>
+            <div class="field-label">Master Password</div>
+            <input type="password" id="masterInput" placeholder="Enter master password..." autocomplete="off">
+        </div>
+        <div class="err-msg" id="loginErr"><i class="fa-solid fa-xmark"></i> Wrong password</div>
+        <button class="btn btn-primary" id="btnLogin"><i class="fa-solid fa-unlock"></i> Unlock Admin</button>
+        <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to main page</a>
     </div>
-    
-    <!-- Edge vignette shadow overlay -->
-    <div class="vignette"></div>
+</div>
 
-    <div class="container">
-        <!-- Minimal Top Nav -->
-        <header>
-            <div class="logo-section">
-                <div class="logo-icon"><i class="fa-solid fa-music"></i></div>
-                <div class="logo-text">
-                    <h1>FXF · Sync</h1>
-                    <p>
-                        <span class="connection-badge" id="connBadge">
-                            <span class="pulse-dot pulse"></span> <span id="connStatusText">Connecting...</span>
-                        </span>
-                    </p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <!-- Live Clock -->
-                <div class="live-clock" id="liveClock">
-                    <div class="clock-time" id="clockTime">00<span class="colon">:</span>00<span class="colon">:</span>00</div>
-                    <div class="clock-date" id="clockDate">Loading...</div>
-                    <div class="clock-tz" id="clockTz">ICT UTC+7</div>
-                </div>
-                <!-- Code User Badge -->
-                <button class="code-user-badge logged-out" id="codeUserBadge" title="Enter access code">
-                    <i class="fa-solid fa-key"></i>
-                    <span id="codeUserLabel">Enter Code</span>
-                </button>
-                <button class="btn" id="btnRefresh" title="Force reload Google Sheets data">
-                    <i class="fa-solid fa-arrows-rotate"></i> Refresh
-                </button>
-                <button class="btn btn-primary" id="btnAddTrack" title="Add a track to Google Sheet">
-                    <i class="fa-solid fa-plus"></i> Add
-                </button>
-                <button class="btn" id="btnOpenTrash" title="Restore deleted tracks">
-                    <i class="fa-solid fa-trash-arrow-up"></i> Trash
-                </button>
-                <button class="btn btn-primary" id="btnOpenGuide">
-                    <i class="fa-solid fa-gear"></i> Sheet API
-                </button>
-                <a class="btn" href="admin.html" title="Admin Panel" style="text-decoration:none;">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </a>
-            </div>
-        </header>
+<!-- ===== ADMIN PANEL ===== -->
+<div id="adminPanel">
+<div class="wrap">
+    <div class="admin-header">
+        <h1><i class="fa-solid fa-shield-halved" style="color:var(--gold)"></i> FXF Admin <span>/ Code Manager</span></h1>
+        <div style="display:flex;gap:.75rem;align-items:center;">
+            <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Main Page</a>
+            <button class="btn btn-sm" id="btnLogout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </div>
 
-        <!-- Hero Section — Centered Cormorant Garamond display -->
-        <section class="hero">
-            <span class="hero-eyebrow">Track Database</span>
-            <h2 class="hero-title">FXF <span>Music</span> Sync</h2>
-            <p class="hero-subtitle">Live connected to Google Sheets — copy Lua tables instantly</p>
-            <div class="hero-meta">
-                <span class="connection-badge" id="heroConnBadge" style="font-size: 0.8rem; padding: 0.4rem 0.9rem;">
-                    <span class="pulse-dot pulse" id="heroDot"></span>
-                    <span id="heroConnText">Connecting to database...</span>
-                </span>
-            </div>
-        </section>
+    <!-- Apps Script Setup -->
+    <div class="setup-hint" id="setupHint">
+        <strong>⚙️ First-time setup:</strong> This system stores codes securely in <strong>Google Apps Script Properties</strong> (free & secure).
+        Paste your <strong>Apps Script Web App URL</strong> below and click Save Config.
+        <br><br>
+        <div style="margin-top:.5rem;">
+            <div class="field-label">Apps Script Web App URL</div>
+            <input type="text" id="cfgApiKey" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <button class="btn btn-sm" id="btnSaveCfg" style="margin-top:.75rem;"><i class="fa-solid fa-floppy-disk"></i> Save Config</button>
+        <span id="cfgStatus" style="font-family:var(--font-mono);font-size:.72rem;color:var(--m2);margin-left:.75rem;"></span>
+    </div>
 
-        <!-- Stats Section -->
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-list-ol"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Total Tracks</span>
-                    <span class="stat-value" id="statTotalTracks">0</span>
-                    <span class="stat-subtitle">Database Index</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Categories</span>
-                    <span class="stat-value" id="statCategories">0</span>
-                    <span class="stat-subtitle">Groups Configured</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Last Updated</span>
-                    <span class="stat-value" id="statLastUpdated" style="font-size: 1.1rem; line-height: 1.8rem; height: 1.8rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 250px;">Never</span>
-                    <span class="stat-subtitle">Sheet Latest Edit</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Controls Dashboard -->
-        <section class="controls-container">
-            <div class="search-row">
-                <div class="search-wrapper">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search by ID, Title, or Category...">
-                    <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <span class="keyboard-hint">/</span>
-                </div>
-                <div class="view-actions">
-                    <select class="sort-select" id="sortSelect">
-                        <option value="name-asc">Name (A-Z)</option>
-                        <option value="name-desc">Name (Z-A)</option>
-                        <option value="id-asc">ID (Low to High)</option>
-                        <option value="id-desc">ID (High to Low)</option>
-                        <option value="updated-desc">Recently Updated</option>
-                    </select>
-                    
-                    <div class="toggle-group">
-                        <button class="toggle-btn active" id="btnGridView" title="Grid View"><i class="fa-solid fa-grip"></i></button>
-                        <button class="toggle-btn" id="btnTableView" title="Table View"><i class="fa-solid fa-list"></i></button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="filter-row" id="categoriesFilterRow">
-                <span class="filter-label">Filter:</span>
-                <button class="category-pill active" data-category="ALL">All</button>
-                <!-- Dynamically filled categories -->
-            </div>
-
-            <div class="filter-row" id="ownerFilterRow">
-                <span class="filter-label">Uploader:</span>
-                <select class="sort-select" id="ownerFilterSelect" style="min-width: 200px;">
-                    <option value="ALL">All Uploaders</option>
-                    <!-- Dynamically filled owners -->
-                </select>
-            </div>
-        </section>
-
-        <!-- Live Content View -->
-        <main>
-            <!-- Skeleton Loading (visible during fetch) -->
-            <div class="songs-grid" id="loadingSkeleton" style="display: grid;">
-                <div class="skeleton-card">
-                    <div class="song-header">
-                        <div class="skeleton-block" style="width: 80px; height: 20px;"></div>
-                        <div class="skeleton-block" style="width: 100px; height: 20px;"></div>
-                    </div>
-                    <div class="skeleton-block" style="width: 70%; height: 25px; margin: 10px 0;"></div>
-                    <div class="song-footer">
-                        <div class="skeleton-block" style="width: 120px; height: 15px;"></div>
-                        <div class="skeleton-block" style="width: 70px; height: 25px;"></div>
-                    </div>
-                </div>
-                <div class="skeleton-card">
-                    <div class="song-header">
-                        <div class="skeleton-block" style="width: 60px; height: 20px;"></div>
-                        <div class="skeleton-block" style="width: 80px; height: 20px;"></div>
-                    </div>
-                    <div class="skeleton-block" style="width: 85%; height: 25px; margin: 10px 0;"></div>
-                    <div class="song-footer">
-                        <div class="skeleton-block" style="width: 110px; height: 15px;"></div>
-                        <div class="skeleton-block" style="width: 70px; height: 25px;"></div>
-                    </div>
-                </div>
-                <div class="skeleton-card">
-                    <div class="song-header">
-                        <div class="skeleton-block" style="width: 90px; height: 20px;"></div>
-                        <div class="skeleton-block" style="width: 90px; height: 20px;"></div>
-                    </div>
-                    <div class="skeleton-block" style="width: 60%; height: 25px; margin: 10px 0;"></div>
-                    <div class="song-footer">
-                        <div class="skeleton-block" style="width: 130px; height: 15px;"></div>
-                        <div class="skeleton-block" style="width: 70px; height: 25px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <h3 id="emptyTitle">No Data Found</h3>
-                <p id="emptyMsg">We couldn't retrieve any records from the Google Sheet. Please check the sheet link or add some rows to start.</p>
-                <div style="display: flex; gap: 1rem;">
-                    <button class="btn" id="btnLoadDemo" style="background: rgba(255,255,255,0.05)">
-                        <i class="fa-solid fa-vial"></i> Load Demo Data
-                    </button>
-                    <a class="btn btn-primary" href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank">
-                        <i class="fa-solid fa-up-right-from-square"></i> Open Google Sheet
-                    </a>
-                </div>
-            </div>
-
-            <!-- Grid Container -->
-            <div class="songs-grid" id="songsGridContainer" style="display: none;">
-                <!-- Cards injected dynamically -->
-            </div>
-
-            <!-- Table Container -->
-            <div class="table-wrapper" id="songsTableContainer" style="display: none;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%">ID</th>
-                            <th style="width: 50%">Name</th>
-                            <th style="width: 20%">Category</th>
-                            <th style="width: 15%">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="songsTableBody">
-                        <!-- Table rows injected dynamically -->
-                    </tbody>
-                </table>
-            </div>
-        </main>
-
-        <!-- Preview & Bulk Operations Pane -->
-        <section class="preview-pane" id="previewPane" style="display: none;">
-            <div class="preview-header">
-                <div class="preview-title">
-                    <i class="fa-solid fa-code" style="color: var(--gold);"></i> Lua Table Export Preview
-                </div>
-                <button class="btn btn-primary" id="btnCopyAllFiltered" style="padding: 0.45rem 1rem; font-size: 0.8rem;">
-                    <i class="fa-solid fa-copy"></i> Copy All Filtered (<span id="filteredCount">0</span>)
-                </button>
-            </div>
-            <div class="preview-body">
-                <pre><code id="luaExportCode">-- Loading preview...</code></pre>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
+    <!-- Add Code Form -->
+    <div class="add-form">
+        <div class="section-title"><i class="fa-solid fa-plus" style="color:var(--gold)"></i> Add New Code</div>
+        <div class="form-grid">
             <div>
-                CONNECTED TO <a href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank" id="footerSheetLink">GOOGLE SHEETS DATABASE <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i></a>
+                <div class="field-label">Display Name</div>
+                <input type="text" id="newName" placeholder="e.g. DJ Admin">
             </div>
             <div>
-                FXF Sync • PRECISE SYSTEMS DEVELOPMENT
-            </div>
-        </footer>
-    </div>
-
-    <!-- Toast Containers -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Code Login Modal -->
-    <div class="code-modal-overlay" id="codeModal">
-        <div class="code-modal">
-            <div class="code-modal-title"><i class="fa-solid fa-key"></i> Enter Access Code</div>
-            <p style="font-size:.83rem;color:var(--m1);line-height:1.55;">Enter your code to unlock features. Codes are managed by admin.</p>
-            <input class="code-input" type="password" id="codeInput" placeholder="YOUR-CODE" autocomplete="off" maxlength="32">
-            <div class="code-err" id="codeErr"><i class="fa-solid fa-xmark"></i> Invalid code</div>
-            <button class="btn btn-primary" id="btnCodeSubmit" style="padding:.8rem;"><i class="fa-solid fa-unlock"></i> Unlock</button>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <button class="btn" id="btnCodeLogout" style="display:none;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-                <button class="btn" id="btnCodeClose" style="margin-left:auto;"><i class="fa-solid fa-xmark"></i> Close</button>
+                <div class="field-label">Access Code</div>
+                <input type="text" id="newCode" placeholder="e.g. FXF-2026" autocomplete="off">
             </div>
         </div>
+        <div class="toggle-row">
+            <label class="toggle">
+                <input type="checkbox" id="newCanEdit">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Can edit / delete others' entries</span>
+        </div>
+        <button class="btn btn-primary" id="btnAddCode" style="width:auto;padding:.65rem 1.5rem;">
+            <i class="fa-solid fa-plus"></i> Add Code
+        </button>
     </div>
 
-    <!-- Apps Script Modal Guide -->
-    <div class="modal-overlay" id="guideModal">
-        <div class="modal">
-            <button class="modal-close" id="btnCloseGuide"><i class="fa-solid fa-xmark"></i></button>
-            <h2 class="modal-title">Setup Sheet Editing</h2>
-            <div class="modal-content">
-                <p>Deploy this Google Apps Script as a Web App, then paste the Web App URL below. The site uses it to add, update, and delete rows after a valid code is entered.</p>
-                <div class="edit-form">
-                    <label>
-                        Google Apps Script Web App URL
-                        <input type="text" id="sheetApiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-                    </label>
-                    <button class="btn btn-primary" id="btnSaveSheetApi" style="width:100%;"><i class="fa-solid fa-floppy-disk"></i> Save Sheet API URL</button>
+    <!-- Code List -->
+    <div class="section-title"><i class="fa-solid fa-key" style="color:var(--gold)"></i> Active Codes</div>
+    <div id="codeList" class="code-list">
+        <div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading codes...</div>
+    </div>
+    <div class="status-bar" id="statusBar"></div>
+</div>
+</div>
+
+<div class="toast-c" id="toastC"></div>
+
+<script>
+// ===== CONFIG =====
+// Change this master password here:
+const MASTER_PASS = 'fxf-admin-2026';
+
+let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || '';
+
+// ===== LOGIN =====
+document.getElementById('masterInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('btnLogin').addEventListener('click', doLogin);
+
+function doLogin() {
+    const val = document.getElementById('masterInput').value;
+    if (val === MASTER_PASS) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadCfgFromStorage();
+        fetchCodes();
+    } else {
+        const err = document.getElementById('loginErr');
+        err.style.display = 'block';
+        setTimeout(()=> err.style.display='none', 3000);
+    }
+}
+
+document.getElementById('btnLogout').addEventListener('click', () => {
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('masterInput').value = '';
+});
+
+// ===== CONFIG =====
+function loadCfgFromStorage() {
+    document.getElementById('cfgApiKey').value = SHEET_API_URL;
+}
+
+document.getElementById('btnSaveCfg').addEventListener('click', async () => {
+    SHEET_API_URL = normalizeInput(document.getElementById('cfgApiKey').value);
+    localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
+    document.getElementById('cfgApiKey').value = SHEET_API_URL;
+
+    const btn = document.getElementById('btnSaveCfg');
+    const status = document.getElementById('cfgStatus');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch loading-spin"></i> Testing...';
+    status.style.color = 'var(--m2)';
+    status.textContent = 'Testing Apps Script...';
+    try {
+        await fetchCodes(true);
+        status.style.color = 'var(--green)';
+        status.textContent = 'Saved and connected!';
+        setTimeout(()=> status.textContent = '', 2500);
+    } catch(e) {
+        status.style.color = 'var(--red)';
+        status.textContent = e.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Config';
+    }
+});
+
+// ===== APPS SCRIPT API =====
+function normalizeInput(value) {
+    return String(value || '').trim();
+}
+
+async function fetchCodes(shouldThrow = false) {
+    if (!SHEET_API_URL) {
+        document.getElementById('codeList').innerHTML = '<div class="empty-list">⚠️ Set your Apps Script Web App URL above first.</div>';
+        return;
+    }
+    document.getElementById('codeList').innerHTML = '<div class="empty-list"><i class="fa-solid fa-circle-notch loading-spin"></i> Loading...</div>';
+    try {
+        const res = await fetch(`${SHEET_API_URL}?action=get_codes`);
+        if (!res.ok) throw new Error('Failed to connect to Apps Script');
+        const data = await res.json();
+        renderCodes(data.codes || []);
+    } catch(e) {
+        document.getElementById('codeList').innerHTML = `<div class="empty-list">❌ Error: ${e.message}</div>`;
+        if (shouldThrow) throw e;
+    }
+}
+
+async function saveCodes(codes) {
+    const res = await fetch(SHEET_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'set_codes',
+            adminPassword: MASTER_PASS,
+            codes: codes
+        })
+    });
+    if (!res.ok) throw new Error('Failed to save codes');
+    return res.json();
+}
+
+// ===== RENDER =====
+function renderCodes(codes) {
+    const list = document.getElementById('codeList');
+    if (!codes.length) {
+        list.innerHTML = '<div class="empty-list">No codes yet. Add one above.</div>';
+        return;
+    }
+    list.innerHTML = '';
+    codes.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'code-item';
+        item.innerHTML = `
+            <div class="code-info">
+                <div class="code-name">${escH(c.name)}</div>
+                <div class="code-value"><i class="fa-solid fa-key" style="font-size:.65rem"></i> ${escH(c.code)}</div>
+                <div class="code-perms">
+                    <span class="perm-badge ${c.canEdit ? 'perm-yes':'perm-no'}">
+                        <i class="fa-solid ${c.canEdit ? 'fa-check':'fa-xmark'}"></i>
+                        ${c.canEdit ? 'Can Edit Others' : 'Own Entries Only'}
+                    </span>
                 </div>
-                <ol>
-                    <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/edit?usp=sharing" target="_blank" style="color: var(--gold);">Open Spreadsheet</a>.</li>
-                    <li>In the top menu, select <strong>Extensions</strong> &gt; <strong>Apps Script</strong>.</li>
-                    <li>Delete any code in the editor and paste the script below.</li>
-                    <li>Deploy as a <strong>Web app</strong>, set access to <strong>Anyone</strong>, then copy the Web App URL.</li>
-                </ol>
-                <div class="code-block-wrapper">
-                    <button class="btn-copy-code" id="btnCopyAppsScriptCode"><i class="fa-solid fa-copy"></i> Copy Script</button>
-                    <pre><code id="appsScriptCode" style="color: var(--white); max-height: 260px;">var MAIN_SHEET = 'Sheet1';
-var TRASH_SHEET = 'Trash';
-var AUDIT_SHEET = 'Audit Log';
-
-function doGet(e) {
-  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
-  if (action !== 'trash') return reply({ ok: false, error: 'Unknown action' });
-
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-  var requester = {
-    code: String((e.parameter && e.parameter.code) || '').trim(),
-    canEdit: String((e.parameter && e.parameter.canEdit) || '') === 'true'
-  };
-  if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
-
-  var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
-    return requester.canEdit || String(row[4] || '').trim() === requester.code;
-  }).map(function(row) {
-    return {
-      id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
-      owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
-      updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
-      deletedReason: row[12]
-    };
-  });
-
-  return reply({ ok: true, trash: rows });
-}
-
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-  try {
-    var body = JSON.parse((e.postData && e.postData.contents) || '{}');
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getOrCreateSheet(ss, MAIN_SHEET, mainHeaders());
-    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-    var audit = getOrCreateSheet(ss, AUDIT_SHEET, auditHeaders());
-    var action = String(body.action || '').toLowerCase();
-    var song = body.song || {};
-    var original = body.original || {};
-    var requester = {
-      code: String(body.code || '').trim(),
-      name: String(body.user || '').trim(),
-      canEdit: body.canEdit === true
-    };
-
-    if (!requester.code) return reply({ ok: false, error: 'Missing access code' });
-    if (!action) return reply({ ok: false, error: 'Missing action' });
-
-    ensureHeaders(sheet, mainHeaders());
-    ensureHeaders(trash, trashHeaders());
-    ensureHeaders(audit, auditHeaders());
-
-    var id = String(song.id || '').trim();
-    var name = String(song.name || '').trim();
-    var category = String(song.category || '').trim();
-    var now = new Date();
-
-    if (action === 'add') {
-      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-      if (findRowById(sheet, id)) return reply({ ok: false, error: 'This ID already exists' });
-      createBackup(ss, sheet);
-      sheet.appendRow([id, name, category, now, requester.code, requester.name, requester.name, now, '', '']);
-      logAudit(audit, 'add', id, name, requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'update') {
-      if (!id || !name) return reply({ ok: false, error: 'ID and Name are required' });
-      var updateRow = locateOwnedRow(sheet, original, requester);
-      if (!updateRow.ok) return reply(updateRow);
-      var duplicateRow = findRowById(sheet, id);
-      if (duplicateRow && duplicateRow !== updateRow.row) return reply({ ok: false, error: 'This ID already exists on another row' });
-      createBackup(ss, sheet);
-      sheet.getRange(updateRow.row, 1, 1, 10).setValues([[
-        id, name, category, now,
-        updateRow.data[4] || requester.code,
-        updateRow.data[5] || requester.name,
-        updateRow.data[6] || requester.name,
-        updateRow.data[7] || now,
-        requester.name,
-        now
-      ]]);
-      logAudit(audit, 'update', id, name, requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'delete') {
-      var deleteRow = locateOwnedRow(sheet, original, requester);
-      if (!deleteRow.ok) return reply(deleteRow);
-      createBackup(ss, sheet);
-      var deleted = deleteRow.data.slice();
-      trash.appendRow([
-        deleted[0], deleted[1], deleted[2], deleted[3],
-        deleted[4], deleted[5], deleted[6], deleted[7], deleted[8], deleted[9],
-        requester.name, now, String(body.reason || '').trim()
-      ]);
-      sheet.deleteRow(deleteRow.row);
-      logAudit(audit, 'delete', deleted[0], deleted[1], requester);
-      return reply({ ok: true });
-    }
-
-    if (action === 'restore') {
-      var restoreRow = locateTrashRow(trash, original, requester);
-      if (!restoreRow.ok) return reply(restoreRow);
-      var item = restoreRow.data;
-      if (findRowById(sheet, item[0])) return reply({ ok: false, error: 'This ID already exists in active sheet' });
-      createBackup(ss, sheet);
-      sheet.appendRow([item[0], item[1], item[2], now, item[4], item[5], item[6], item[7], requester.name, now]);
-      trash.deleteRow(restoreRow.row);
-      logAudit(audit, 'restore', item[0], item[1], requester);
-      return reply({ ok: true });
-    }
-
-    return reply({ ok: false, error: 'Unknown action' });
-  } catch (err) {
-    return reply({ ok: false, error: String(err && err.message ? err.message : err) });
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function mainHeaders() {
-  return ['ID', 'Name', 'Category', 'Auto time update', 'Owner Code', 'Owner Name', 'Created By', 'Created At', 'Updated By', 'Updated At'];
-}
-
-function trashHeaders() {
-  return ['ID', 'Name', 'Category', 'Last Updated', 'Owner Code', 'Owner Name', 'Created By', 'Created At', 'Updated By', 'Updated At', 'Deleted By', 'Deleted At', 'Deleted Reason'];
-}
-
-function auditHeaders() {
-  return ['Time', 'Action', 'ID', 'Name', 'User', 'Code'];
-}
-
-function getOrCreateSheet(ss, name, headers) {
-  var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
-  ensureHeaders(sheet, headers);
-  return sheet;
-}
-
-function ensureHeaders(sheet, headers) {
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-}
-
-function locateOwnedRow(sheet, original, requester) {
-  var originalId = String(original.id || '').trim();
-  var originalOwner = String(original.owner || '').trim();
-  if (!originalId) return { ok: false, error: 'Missing original ID' };
-
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { ok: false, error: 'Sheet is empty' };
-  var values = sheet.getRange(2, 1, lastRow - 1, mainHeaders().length).getValues();
-
-  for (var i = 0; i < values.length; i++) {
-    var rowId = String(values[i][0] || '').trim();
-    var ownerCode = String(values[i][4] || '').trim();
-    var ownerName = String(values[i][5] || '').trim();
-    if (rowId !== originalId) continue;
-    if (originalOwner && ownerCode && ownerCode !== originalOwner) continue;
-    if (!requester.canEdit && ownerCode !== requester.code) {
-      return { ok: false, error: 'You can only edit your own tracks' };
-    }
-    if (!requester.canEdit && !ownerCode) {
-      return { ok: false, error: 'This old row has no owner. Ask an admin to claim or edit it.' };
-    }
-    return { ok: true, row: i + 2, data: values[i] };
-  }
-
-  return { ok: false, error: 'Track was not found. Refresh before editing.' };
-}
-
-function locateTrashRow(sheet, original, requester) {
-  var originalId = String(original.id || '').trim();
-  var originalOwner = String(original.owner || '').trim();
-  if (!originalId) return { ok: false, error: 'Missing original ID' };
-
-  var values = sheetRows(sheet, trashHeaders().length);
-  for (var i = 0; i < values.length; i++) {
-    var rowId = String(values[i][0] || '').trim();
-    var ownerCode = String(values[i][4] || '').trim();
-    if (rowId !== originalId) continue;
-    if (originalOwner && ownerCode !== originalOwner) continue;
-    if (!requester.canEdit && ownerCode !== requester.code) {
-      return { ok: false, error: 'You can only restore your own deleted tracks' };
-    }
-    return { ok: true, row: i + 2, data: values[i] };
-  }
-
-  return { ok: false, error: 'Trash item was not found. Reload trash and try again.' };
-}
-
-function findRowById(sheet, id) {
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return 0;
-  var values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  for (var i = 0; i < values.length; i++) {
-    if (String(values[i][0] || '').trim() === id) return i + 2;
-  }
-  return 0;
-}
-
-function sheetRows(sheet, width) {
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
-  return sheet.getRange(2, 1, lastRow - 1, width).getValues();
-}
-
-function createBackup(ss, sheet) {
-  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
-  var backup = sheet.copyTo(ss).setName('backup-' + stamp);
-  backup.hideSheet();
-}
-
-function logAudit(sheet, action, id, name, requester) {
-  sheet.appendRow([new Date(), action, id, name, requester.name, requester.code]);
-}
-
-function reply(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}</code></pre>
-                </div>
-                <h3>Sheet Columns</h3>
-                <p>Main sheet uses columns A-J: <strong>ID</strong>, <strong>Name</strong>, <strong>Category</strong>, <strong>Auto time update</strong>, <strong>Owner Code</strong>, <strong>Owner Name</strong>, <strong>Created By</strong>, <strong>Created At</strong>, <strong>Updated By</strong>, and <strong>Updated At</strong>. Deleted tracks move to the Trash sheet and every action is logged in Audit Log.</p>
-                <button class="btn btn-primary" id="btnGotIt" style="width: 100%; margin-top: 0.5rem;">
-                    Done, I got it!
+            </div>
+            <div class="code-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteCode(${idx})">
+                    <i class="fa-solid fa-trash"></i> Delete
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Track Edit Modal -->
-    <div class="modal-overlay" id="trackModal">
-        <div class="modal">
-            <button class="modal-close" id="btnCloseTrackModal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 class="modal-title" id="trackModalTitle">Add Track</h2>
-            <div class="modal-content">
-                <div class="edit-form">
-                    <label>
-                        Asset ID
-                        <input type="text" id="trackIdInput" placeholder="1098462719">
-                    </label>
-                    <label>
-                        Name
-                        <input type="text" id="trackNameInput" placeholder="Track title">
-                    </label>
-                    <label>
-                        Category
-                        <input type="text" id="trackCategoryInput" placeholder="Chipeo" list="categorySuggestions">
-                        <datalist id="categorySuggestions">
-                            <option value="Chipeo">
-                            <option value="Sound Check">
-                            <option value="Thai Song">
-                            <option value="Thai Remix">
-                        </datalist>
-                    </label>
-                    <div class="edit-actions">
-                        <button class="btn btn-danger" id="btnDeleteTrack" style="display:none;"><i class="fa-solid fa-trash"></i> Delete</button>
-                        <div style="display:flex;gap:.75rem;margin-left:auto;">
-                            <button class="btn" id="btnCancelTrack"><i class="fa-solid fa-xmark"></i> Cancel</button>
-                            <button class="btn btn-primary" id="btnSaveTrack"><i class="fa-solid fa-floppy-disk"></i> Save</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Trash / Restore Modal -->
-    <div class="modal-overlay" id="trashModal">
-        <div class="modal">
-            <button class="modal-close" id="btnCloseTrashModal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 class="modal-title">Trash</h2>
-            <div class="modal-content">
-                <p>Deleted tracks stay here and can be restored by the owner or an admin code.</p>
-                <button class="btn btn-primary" id="btnReloadTrash" style="width:100%;"><i class="fa-solid fa-arrows-rotate"></i> Reload Trash</button>
-                <div class="trash-list" id="trashList">
-                    <div class="trash-meta">Open trash to load deleted tracks.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Canvas Particle Background Script -->
-    <script>
-        const canvas = document.getElementById('bg-particles');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        let mouseX = undefined;
-        let mouseY = undefined;
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() {
-                this.reset();
-                this.y = Math.random() * canvas.height; // start randomized on y on spawn
-            }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = canvas.height + Math.random() * 100;
-                this.size = Math.random() * 1.5 + 0.5;
-                this.speedY = Math.random() * 0.4 + 0.2;
-                this.speedX = (Math.random() - 0.5) * 0.25;
-                this.alpha = Math.random() * 0.45 + 0.05;
-            }
-            update() {
-                this.y -= this.speedY;
-                this.x += this.speedX;
-                
-                // interactive mouse displacement
-                if (mouseX !== undefined && mouseY !== undefined) {
-                    const dx = this.x - mouseX;
-                    const dy = this.y - mouseY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 150) {
-                        const force = (150 - dist) / 150;
-                        this.x += (dx / dist) * force * 0.6;
-                    }
-                }
-                
-                if (this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.fillStyle = `rgba(196, 163, 90, ${this.alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
-        
-        window.addEventListener('mouseleave', () => {
-            mouseX = undefined;
-            mouseY = undefined;
-        });
-
-        // Spawn particles
-        const particleCount = 75;
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-    </script>
-
-    <!-- Live Clock Script -->
-    <script>
-    (function() {
-        const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        function updateClock() {
-            // Bangkok timezone (ICT, UTC+7)
-            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-            const h = String(now.getHours()).padStart(2,'0');
-            const m = String(now.getMinutes()).padStart(2,'0');
-            const s = String(now.getSeconds()).padStart(2,'0');
-            const dayName = days[now.getDay()];
-            const dd = String(now.getDate()).padStart(2,'0');
-            const mon = months[now.getMonth()];
-            const yyyy = now.getFullYear();
-            const el = document.getElementById('clockTime');
-            if (el) el.innerHTML = `${h}<span class="colon">:</span>${m}<span class="colon">:</span>${s}`;
-            const de = document.getElementById('clockDate');
-            if (de) de.textContent = `${dayName}, ${dd} ${mon} ${yyyy}`;
-        }
-        updateClock();
-        setInterval(updateClock, 1000);
-    })();
-    </script>
-
-    <!-- Code System Script -->
-    <script>
-    (function() {
-        // JSONBin config — same as admin.html
-        const API_KEY = () => localStorage.getItem('fxf_api_key') || '';
-        const BIN_ID  = () => localStorage.getItem('fxf_bin_id')  || '';
-        const KEY_TYPE = () => localStorage.getItem('fxf_key_type') || 'master';
-        let currentUser = null; // { name, code, canEdit }
-        let cachedCodes = null;
-
-        const codeModal     = document.getElementById('codeModal');
-        const codeInput     = document.getElementById('codeInput');
-        const codeErr       = document.getElementById('codeErr');
-        const btnCodeSubmit = document.getElementById('btnCodeSubmit');
-        const btnCodeClose  = document.getElementById('btnCodeClose');
-        const btnCodeLogout = document.getElementById('btnCodeLogout');
-        const codeUserBadge = document.getElementById('codeUserBadge');
-        const codeUserLabel = document.getElementById('codeUserLabel');
-
-        // Open modal
-        codeUserBadge.addEventListener('click', () => {
-            codeModal.classList.add('open');
-            codeErr.style.display = 'none';
-            if (currentUser) {
-                codeInput.style.display = 'none';
-                btnCodeSubmit.style.display = 'none';
-                btnCodeLogout.style.display = 'inline-flex';
-            } else {
-                codeInput.style.display = 'block';
-                btnCodeSubmit.style.display = 'flex';
-                btnCodeLogout.style.display = 'none';
-                setTimeout(()=> codeInput.focus(), 100);
-            }
-        });
-
-        btnCodeClose.addEventListener('click', () => codeModal.classList.remove('open'));
-        codeModal.addEventListener('click', e => { if(e.target === codeModal) codeModal.classList.remove('open'); });
-        codeInput.addEventListener('keydown', e => { if(e.key==='Enter') submitCode(); });
-        btnCodeSubmit.addEventListener('click', submitCode);
-        btnCodeLogout.addEventListener('click', doLogout);
-
-        async function submitCode() {
-            const val = codeInput.value.trim();
-            if (!val) return;
-            btnCodeSubmit.innerHTML = '<i class="fa-solid fa-circle-notch" style="animation:spin-animation 1s linear infinite"></i> Checking...';
-            btnCodeSubmit.disabled = true;
-            try {
-                const codes = await loadCodes();
-                const found = codes.find(c => c.code === val);
-                if (found) {
-                    currentUser = found;
-                    codeModal.classList.remove('open');
-                    codeUserBadge.classList.remove('logged-out');
-                    codeUserLabel.textContent = found.name;
-                    codeInput.value = '';
-                    codeErr.style.display = 'none';
-                    dispatchUserEvent();
-                } else {
-                    codeErr.style.display = 'block';
-                    codeInput.value = '';
-                    codeInput.focus();
-                }
-            } catch(e) {
-                codeErr.style.display = 'block';
-                codeErr.innerHTML = '<i class="fa-solid fa-xmark"></i> Network error — check JSONBin config in admin';
-            } finally {
-                btnCodeSubmit.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock';
-                btnCodeSubmit.disabled = false;
-            }
-        }
-
-        function doLogout() {
-            currentUser = null;
-            codeUserBadge.classList.add('logged-out');
-            codeUserLabel.textContent = 'Enter Code';
-            codeModal.classList.remove('open');
-            dispatchUserEvent();
-        }
-
-        async function loadCodes() {
-            if (cachedCodes) return cachedCodes;
-            const k = API_KEY(); const b = BIN_ID();
-            if (!k || !b) return [];
-            const authHeader = KEY_TYPE() === 'access' ? 'X-Access-Key' : 'X-Master-Key';
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${b}/latest`, {
-                headers: { [authHeader]: k }
-            });
-            if (!res.ok) throw new Error('fetch fail');
-            const data = await res.json();
-            cachedCodes = data.record.codes || [];
-            setTimeout(()=> cachedCodes=null, 60000); // cache 1 min
-            return cachedCodes;
-        }
-
-        function dispatchUserEvent() {
-            window._fxfUser = currentUser;
-            window.dispatchEvent(new CustomEvent('fxf-user-change', { detail: currentUser }));
-        }
-
-        window._fxfUser = null;
-        window._fxfGetUser = () => currentUser;
-    })();
-    </script>
-
-    <!-- App Logic -->
-    <script>
-        // App State
-        let allSongs = [];
-        let filteredSongs = [];
-        let isUsingDemoData = false;
-        let currentEditor = null;
-        let editingRowNumber = null;
-        let editingOriginalSong = null;
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1SoPqzIvgMU6b1Dnq5A-xJCZhHfm5OrYzgMqIpq7oIc8/gviz/tq?tqx=out:json';
-        let SHEET_API_URL = localStorage.getItem('fxf_sheet_api_url') || 'https://script.google.com/macros/s/AKfycbyj2WD-NOPutw0t2ubw8g-NmNE6IkCk-W1EIED6hS0PDehfETg-bnoIOoVea8vvMkpkjw/exec';
-        // Auto-save the default URL if not already set
-        if (!localStorage.getItem('fxf_sheet_api_url')) {
-            localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
-        }
-
-        // Elements
-        const connBadge = document.getElementById('connBadge');
-        const connStatusText = document.getElementById('connStatusText');
-        const btnRefresh = document.getElementById('btnRefresh');
-        const btnAddTrack = document.getElementById('btnAddTrack');
-        const btnOpenTrash = document.getElementById('btnOpenTrash');
-        const btnOpenGuide = document.getElementById('btnOpenGuide');
-        const btnCloseGuide = document.getElementById('btnCloseGuide');
-        const btnGotIt = document.getElementById('btnGotIt');
-        const guideModal = document.getElementById('guideModal');
-        const btnCopyAppsScriptCode = document.getElementById('btnCopyAppsScriptCode');
-        const appsScriptCodeText = document.getElementById('appsScriptCode');
-        const sheetApiUrlInput = document.getElementById('sheetApiUrlInput');
-        const btnSaveSheetApi = document.getElementById('btnSaveSheetApi');
-
-        const statTotalTracks = document.getElementById('statTotalTracks');
-        const statCategories = document.getElementById('statCategories');
-        const statLastUpdated = document.getElementById('statLastUpdated');
-
-        const searchInput = document.getElementById('searchInput');
-        const sortSelect = document.getElementById('sortSelect');
-        const btnGridView = document.getElementById('btnGridView');
-        const btnTableView = document.getElementById('btnTableView');
-        const categoriesFilterRow = document.getElementById('categoriesFilterRow');
-        const ownerFilterSelect = document.getElementById('ownerFilterSelect');
-        const categorySuggestions = document.getElementById('categorySuggestions');
-
-        const loadingSkeleton = document.getElementById('loadingSkeleton');
-        const emptyState = document.getElementById('emptyState');
-        const emptyTitle = document.getElementById('emptyTitle');
-        const emptyMsg = document.getElementById('emptyMsg');
-        const btnLoadDemo = document.getElementById('btnLoadDemo');
-        
-        const songsGridContainer = document.getElementById('songsGridContainer');
-        const songsTableContainer = document.getElementById('songsTableContainer');
-        const songsTableBody = document.getElementById('songsTableBody');
-
-        const previewPane = document.getElementById('previewPane');
-        const luaExportCode = document.getElementById('luaExportCode');
-        const btnCopyAllFiltered = document.getElementById('btnCopyAllFiltered');
-        const filteredCount = document.getElementById('filteredCount');
-
-        const toastContainer = document.getElementById('toastContainer');
-        const trackModal = document.getElementById('trackModal');
-        const trackModalTitle = document.getElementById('trackModalTitle');
-        const btnCloseTrackModal = document.getElementById('btnCloseTrackModal');
-        const btnCancelTrack = document.getElementById('btnCancelTrack');
-        const btnSaveTrack = document.getElementById('btnSaveTrack');
-        const btnDeleteTrack = document.getElementById('btnDeleteTrack');
-        const trackIdInput = document.getElementById('trackIdInput');
-        const trackNameInput = document.getElementById('trackNameInput');
-        const trackCategoryInput = document.getElementById('trackCategoryInput');
-        const trashModal = document.getElementById('trashModal');
-        const btnCloseTrashModal = document.getElementById('btnCloseTrashModal');
-        const btnReloadTrash = document.getElementById('btnReloadTrash');
-        const trashList = document.getElementById('trashList');
-
-        // Config variables
-        let currentView = 'grid'; // 'grid' | 'table'
-        let currentCategoryFilter = 'ALL';
-        let currentOwnerFilter = 'ALL';
-        let currentSort = 'name-asc';
-
-        // Dynamic category styles container
-        const categoryThemes = {};
-
-        // Fallback high-fidelity demo data
-        const demoSongs = [
-            { id: "1098462719", name: "Chipeo Mega Remix 2026", category: "Chipeo", lastUpdated: "2026-06-07 09:12:00", ownerName: "DJ Max", createdBy: "DJ Max" },
-            { id: "9482716301", name: "Cyber Sound Check Ultra Bass", category: "Sound Check", lastUpdated: "2026-06-07 08:34:00", ownerName: "DJ Max", createdBy: "DJ Max" },
-            { id: "5183920192", name: "ฝนตกไหม - Thai Pop Edit", category: "Thai Song", lastUpdated: "2026-06-06 18:20:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" },
-            { id: "8827391029", name: "รถแห่สามช่า 2026 Nonstop", category: "Thai Remix", lastUpdated: "2026-06-05 21:05:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" },
-            { id: "2837491029", name: "Chipeo Vol. 4 (Bass Boosted)", category: "Chipeo", lastUpdated: "2026-06-07 09:15:22", ownerName: "DJ Max", createdBy: "DJ Max" },
-            { id: "1039482910", name: "Thai Remix Club Mix v2", category: "Thai Remix", lastUpdated: "2026-06-04 12:00:00", ownerName: "DJ Sunny", createdBy: "DJ Sunny" }
-        ];
-
-        // Init App
-        window.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            loadSheetData();
-        });
-
-        // Event Listeners Setup
-        function setupEventListeners() {
-            // Refresh Button
-            btnRefresh.addEventListener('click', () => {
-                btnRefresh.querySelector('i').classList.add('spin');
-                loadSheetData();
-            });
-
-            btnAddTrack.addEventListener('click', () => {
-                if (!requireEditor()) return;
-                openTrackModal();
-            });
-
-            btnOpenTrash.addEventListener('click', () => {
-                if (!requireEditor()) return;
-                trashModal.classList.add('open');
-                loadTrash();
-            });
-
-            window.addEventListener('fxf-user-change', (e) => {
-                currentEditor = e.detail;
-                updateEditState();
-                filterAndRender();
-            });
-
-            // View toggles
-            btnGridView.addEventListener('click', () => {
-                setView('grid');
-            });
-            btnTableView.addEventListener('click', () => {
-                setView('table');
-            });
-
-            // Search Filter
-            searchInput.addEventListener('input', () => {
-                filterAndRender();
-            });
-
-            // Keyboard shortcut for search
-            window.addEventListener('keydown', (e) => {
-                if (e.key === '/' && document.activeElement !== searchInput) {
-                    e.preventDefault();
-                    searchInput.focus();
-                    searchInput.select();
-                }
-            });
-
-            // Sort Select
-            sortSelect.addEventListener('change', () => {
-                currentSort = sortSelect.value;
-                filterAndRender();
-            });
-
-            // Owner Filter Select
-            ownerFilterSelect.addEventListener('change', () => {
-                currentOwnerFilter = ownerFilterSelect.value;
-                filterAndRender();
-            });
-
-            // Modals
-            btnOpenGuide.addEventListener('click', () => {
-                guideModal.classList.add('open');
-            });
-            btnCloseGuide.addEventListener('click', () => {
-                guideModal.classList.remove('open');
-            });
-            btnGotIt.addEventListener('click', () => {
-                guideModal.classList.remove('open');
-            });
-            guideModal.addEventListener('click', (e) => {
-                if (e.target === guideModal) {
-                    guideModal.classList.remove('open');
-                }
-            });
-
-            // Copy script button
-            btnCopyAppsScriptCode.addEventListener('click', () => {
-                copyToClipboard(appsScriptCodeText.innerText);
-                showToast("Apps Script code copied!", "success");
-                btnCopyAppsScriptCode.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
-                setTimeout(() => {
-                    btnCopyAppsScriptCode.innerHTML = `<i class="fa-solid fa-copy"></i> Copy Script`;
-                }, 2000);
-            });
-
-            sheetApiUrlInput.value = SHEET_API_URL;
-            btnSaveSheetApi.addEventListener('click', () => {
-                SHEET_API_URL = sheetApiUrlInput.value.trim();
-                localStorage.setItem('fxf_sheet_api_url', SHEET_API_URL);
-                showToast("Sheet API URL saved.", "success");
-            });
-
-            btnCloseTrackModal.addEventListener('click', closeTrackModal);
-            btnCancelTrack.addEventListener('click', closeTrackModal);
-            trackModal.addEventListener('click', (e) => {
-                if (e.target === trackModal) closeTrackModal();
-            });
-            btnSaveTrack.addEventListener('click', saveTrackFromModal);
-            btnDeleteTrack.addEventListener('click', deleteTrackFromModal);
-            btnCloseTrashModal.addEventListener('click', () => trashModal.classList.remove('open'));
-            btnReloadTrash.addEventListener('click', loadTrash);
-            trashModal.addEventListener('click', (e) => {
-                if (e.target === trashModal) trashModal.classList.remove('open');
-            });
-
-            // Load Demo button
-            btnLoadDemo.addEventListener('click', () => {
-                isUsingDemoData = true;
-                processRawData(demoSongs);
-                showToast("Loaded high-fidelity mock data!", "info");
-            });
-
-            // Bulk Copy Filtered
-            btnCopyAllFiltered.addEventListener('click', () => {
-                copyAllFiltered();
-            });
-
-            currentEditor = window._fxfGetUser ? window._fxfGetUser() : null;
-            updateEditState();
-        }
-
-        // View Mode Switcher
-        function setView(view) {
-            currentView = view;
-            if (view === 'grid') {
-                btnGridView.classList.add('active');
-                btnTableView.classList.remove('active');
-                songsGridContainer.style.display = 'grid';
-                songsTableContainer.style.display = 'none';
-            } else {
-                btnGridView.classList.remove('active');
-                btnTableView.classList.add('active');
-                songsGridContainer.style.display = 'none';
-                songsTableContainer.style.display = 'block';
-            }
-        }
-
-        // Fetch Google Sheet Data
-        async function loadSheetData() {
-            showLoading(true);
-            updateBadgeStatus('connecting', 'Connecting...');
-            
-            try {
-                const response = await fetch(`${SHEET_CSV_URL}&_=${Date.now()}`);
-                if (!response.ok) throw new Error('Network response error');
-                
-                const text = await response.text();
-                // Strip the Google visualization JS wrapper
-                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S\w\W]*)\);/);
-                if (!match) throw new Error('Unparseable Google Sheets API output format');
-                
-                const json = JSON.parse(match[1]);
-                if (json.status !== 'ok') throw new Error('Google Sheets query error status: ' + json.status);
-                
-                const rows = json.table.rows;
-                if (!rows || rows.length === 0) {
-                    throw new Error('Google Sheet is empty');
-                }
-
-                // Determine if headers exist at index 0
-                let dataStartIndex = 0;
-                const firstRowCells = rows[0].c || [];
-                const firstCellVal = firstRowCells[0] ? String(firstRowCells[0].v || '').trim().toLowerCase() : '';
-                
-                if (firstCellVal === 'id') {
-                    dataStartIndex = 1;
-                }
-
-                const parsedSongs = [];
-                for (let i = dataStartIndex; i < rows.length; i++) {
-                    const cells = rows[i].c || [];
-                    
-                    const id = cells[0] ? String(cells[0].v !== null ? cells[0].v : '').trim() : '';
-                    const name = cells[1] ? String(cells[1].v !== null ? cells[1].v : '').trim() : '';
-                    const category = cells[2] ? String(cells[2].v !== null ? cells[2].v : '').trim() : '';
-                    const lastUpdated = cells[3] ? (cells[3].f || cells[3].v || '') : '';
-                    const owner = cells[4] ? String(cells[4].v !== null ? cells[4].v : '').trim() : '';
-                    const ownerName = cells[5] ? String(cells[5].v !== null ? cells[5].v : '').trim() : '';
-                    const createdBy = cells[6] ? String(cells[6].v !== null ? cells[6].v : '').trim() : '';
-                    const createdAt = cells[7] ? (cells[7].f || cells[7].v || '') : '';
-                    const updatedBy = cells[8] ? String(cells[8].v !== null ? cells[8].v : '').trim() : '';
-                    const updatedAt = cells[9] ? (cells[9].f || cells[9].v || '') : '';
-                    
-                    if (id || name || category) {
-                        parsedSongs.push({ id, name, category, lastUpdated, owner, ownerName, createdBy, createdAt, updatedBy, updatedAt, rowNumber: i + 1 });
-                    }
-                }
-
-                isUsingDemoData = false;
-                processRawData(parsedSongs);
-                updateBadgeStatus('connected', 'Live Sheet Connected');
-                
-            } catch (err) {
-                console.error("Fetch failed: ", err);
-                updateBadgeStatus('disconnected', 'Sheet Connection Failed');
-                
-                if (allSongs.length === 0) {
-                    showLoading(false);
-                    emptyState.style.display = 'flex';
-                    emptyTitle.innerText = "Connection Failed";
-                    emptyMsg.innerText = "We couldn't connect to Google Sheet. Ensure the sheet is public (anyone with link can view) and check your internet connection.";
-                    songsGridContainer.style.display = 'none';
-                    songsTableContainer.style.display = 'none';
-                    previewPane.style.display = 'none';
-                } else {
-                    showToast("Failed to refresh: Using previously cached data.", "error");
-                }
-            } finally {
-                setTimeout(() => {
-                    btnRefresh.querySelector('i').classList.remove('spin');
-                }, 500);
-            }
-        }
-
-        // Process raw lists, calculate stats, construct dynamic filter pills, and start rendering
-        function processRawData(songs) {
-            allSongs = songs;
-            
-            showLoading(false);
-            
-            if (allSongs.length === 0) {
-                emptyState.style.display = 'flex';
-                emptyTitle.innerText = "Google Sheet is Empty";
-                emptyMsg.innerText = "Connected to Google Sheet, but no rows containing song records were found. Click the button below to load mock template data.";
-                songsGridContainer.style.display = 'none';
-                songsTableContainer.style.display = 'none';
-                previewPane.style.display = 'none';
-                
-                statTotalTracks.innerText = "0";
-                statCategories.innerText = "0";
-                statLastUpdated.innerText = "N/A";
-                return;
-            }
-
-            emptyState.style.display = 'none';
-            
-            // 1. Calculate Stats
-            statTotalTracks.innerText = allSongs.length;
-
-            const categoriesMap = new Map();
-            const ownersMap = new Map();
-            let maxDate = null;
-
-            allSongs.forEach(s => {
-                if (s.category) {
-                    const key = s.category.trim().toUpperCase();
-                    if (!categoriesMap.has(key)) {
-                        categoriesMap.set(key, s.category.trim());
-                    }
-                }
-
-                // Build owners map from ownerName, createdBy, updatedBy
-                const ownerName = s.ownerName || s.createdBy || s.updatedBy;
-                if (ownerName) {
-                    const key = ownerName.trim();
-                    if (!ownersMap.has(key)) {
-                        ownersMap.set(key, ownerName.trim());
-                    }
-                }
-
-                if (s.lastUpdated) {
-                    const d = new Date(s.lastUpdated);
-                    if (!isNaN(d.getTime())) {
-                        if (!maxDate || d > maxDate) {
-                            maxDate = d;
-                        }
-                    }
-                }
-            });
-            
-            statCategories.innerText = categoriesMap.size;
-            
-            if (maxDate) {
-                statLastUpdated.innerText = formatRelativeTime(maxDate);
-                statLastUpdated.title = maxDate.toLocaleString();
-            } else {
-                statLastUpdated.innerText = "No timestamp info";
-                statLastUpdated.title = "";
-            }
-
-            // 2. Build Category Filter Pills
-            const activeCategory = currentCategoryFilter;
-            categoriesFilterRow.innerHTML = '<span class="filter-label">Filter:</span>';
-            
-            const allBtn = document.createElement('button');
-            allBtn.className = `category-pill ${activeCategory === 'ALL' ? 'active' : ''}`;
-            allBtn.dataset.category = 'ALL';
-            allBtn.innerText = 'All';
-            allBtn.addEventListener('click', () => selectCategoryFilter('ALL'));
-            categoriesFilterRow.appendChild(allBtn);
-
-            Array.from(categoriesMap.entries()).sort().forEach(([key, val]) => {
-                const btn = document.createElement('button');
-                btn.className = `category-pill ${activeCategory === key ? 'active' : ''}`;
-                btn.dataset.category = key;
-                btn.innerText = val;
-                
-                const theme = getCategoryTheme(key);
-                if (theme) {
-                    btn.style.setProperty('--accent-color', theme.color);
-                    btn.style.setProperty('--accent-glow', theme.glow);
-                }
-                
-                btn.addEventListener('click', () => selectCategoryFilter(key));
-                categoriesFilterRow.appendChild(btn);
-            });
-
-            if (activeCategory !== 'ALL' && !categoriesMap.has(activeCategory)) {
-                currentCategoryFilter = 'ALL';
-                allBtn.classList.add('active');
-            }
-
-            // 3. Build Owner Filter Dropdown
-            const activeOwner = currentOwnerFilter;
-            ownerFilterSelect.innerHTML = '<option value="ALL">All Uploaders</option>';
-            Array.from(ownersMap.entries()).sort().forEach(([key, val]) => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.innerText = val;
-                if (activeOwner === key) {
-                    option.selected = true;
-                }
-                ownerFilterSelect.appendChild(option);
-            });
-
-            if (activeOwner !== 'ALL' && !ownersMap.has(activeOwner)) {
-                currentOwnerFilter = 'ALL';
-                ownerFilterSelect.value = 'ALL';
-            }
-
-            // 4. Update Category Suggestions Datalist
-            categorySuggestions.innerHTML = '';
-            Array.from(categoriesMap.values()).sort().forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat;
-                categorySuggestions.appendChild(option);
-            });
-
-            filterAndRender();
-        }
-
-        // Get custom styling tokens for categories based on name
-        function getCategoryTheme(categoryName) {
-            const upper = categoryName.toUpperCase();
-            if (categoryThemes[upper]) {
-                return categoryThemes[upper];
-            }
-            
-            // Pre-defined color codes
-            let theme = {};
-            if (upper === 'CHIPEO') {
-                theme = { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.08)', text: '#ec4899', border: 'rgba(236, 72, 153, 0.2)' };
-            } else if (upper === 'SOUND CHECK') {
-                theme = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', text: '#06b6d4', border: 'rgba(6, 182, 212, 0.2)' };
-            } else if (upper === 'THAI SONG') {
-                theme = { color: '#10b981', bg: 'rgba(16, 185, 129, 0.08)', text: '#10b981', border: 'rgba(16, 185, 129, 0.2)' };
-            } else if (upper === 'THAI REMIX') {
-                theme = { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.08)', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)' };
-            } else {
-                // Generate deterministic gold hues for custom dynamic inputs
-                let hash = 0;
-                for (let i = 0; i < upper.length; i++) {
-                    hash = upper.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                const hue = 35 + Math.abs(hash % 20); // slightly offset gold/yellow spectrum
-                const color = `hsl(${hue}, 48%, 56%)`;
-                theme = { 
-                    color, 
-                    bg: `rgba(196, 163, 90, 0.05)`, 
-                    text: color, 
-                    border: `rgba(196, 163, 90, 0.15)` 
-                };
-            }
-            
-            categoryThemes[upper] = theme;
-            return theme;
-        }
-
-        // Category Filter Selection handler
-        function selectCategoryFilter(category) {
-            currentCategoryFilter = category;
-            
-            const pills = categoriesFilterRow.querySelectorAll('.category-pill');
-            pills.forEach(p => {
-                if (p.dataset.category === category) {
-                    p.classList.add('active');
-                } else {
-                    p.classList.remove('active');
-                }
-            });
-
-            filterAndRender();
-        }
-
-        // Filter, Sort, and Render UI lists
-        function filterAndRender() {
-            const query = searchInput.value.toLowerCase().trim();
-
-            // 1. Filter
-            filteredSongs = allSongs.filter(song => {
-                const matchCategory = currentCategoryFilter === 'ALL' ||
-                    (song.category && song.category.trim().toUpperCase() === currentCategoryFilter);
-
-                const matchOwner = currentOwnerFilter === 'ALL' ||
-                    (song.ownerName && song.ownerName.trim() === currentOwnerFilter) ||
-                    (song.createdBy && song.createdBy.trim() === currentOwnerFilter) ||
-                    (song.updatedBy && song.updatedBy.trim() === currentOwnerFilter);
-
-                const matchQuery = !query ||
-                    (song.id && song.id.toLowerCase().includes(query)) ||
-                    (song.name && song.name.toLowerCase().includes(query)) ||
-                    (song.category && song.category.toLowerCase().includes(query));
-
-                return matchCategory && matchOwner && matchQuery;
-            });
-
-            // 2. Sort
-            filteredSongs.sort((a, b) => {
-                if (currentSort === 'name-asc') {
-                    return a.name.localeCompare(b.name, 'th');
-                } else if (currentSort === 'name-desc') {
-                    return b.name.localeCompare(a.name, 'th');
-                } else if (currentSort === 'id-asc') {
-                    return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
-                } else if (currentSort === 'id-desc') {
-                    return (parseInt(b.id) || 0) - (parseInt(a.id) || 0);
-                } else if (currentSort === 'updated-desc') {
-                    const da = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
-                    const db = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
-                    return db - da;
-                }
-                return 0;
-            });
-
-            // 3. Render
-            renderGridView();
-            renderTableView();
-            renderLuaExportPreview();
-
-            // Toggle view visibility
-            if (filteredSongs.length === 0) {
-                songsGridContainer.style.display = 'none';
-                songsTableContainer.style.display = 'none';
-                previewPane.style.display = 'none';
-                
-                emptyState.style.display = 'flex';
-                emptyTitle.innerText = "No Matching Songs";
-                emptyMsg.innerText = "Try adjusting your search terms or selecting a different category filter.";
-            } else {
-                emptyState.style.display = 'none';
-                if (currentView === 'grid') {
-                    songsGridContainer.style.display = 'grid';
-                } else {
-                    songsTableContainer.style.display = 'block';
-                }
-                previewPane.style.display = 'flex';
-            }
-        }
-
-        // Render Grid View with mouse-interactive parallax tilt triggers
-        function renderGridView() {
-            songsGridContainer.innerHTML = '';
-            
-            filteredSongs.forEach(song => {
-                const card = document.createElement('div');
-                card.className = 'song-card';
-                
-                const theme = getCategoryTheme(song.category);
-                
-                const safeCategory = song.category || 'Unassigned';
-                const tagStyle = theme ? `style="--tag-bg: ${theme.bg}; --tag-text: ${theme.text}; --tag-border: ${theme.border};"` : '';
-                const formattedDate = song.lastUpdated ? formatRelativeTime(new Date(song.lastUpdated)) : 'Never updated';
-
-                card.innerHTML = `
-                    <div class="song-header">
-                        <div class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
-                            <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
-                        </div>
-                        <span class="song-category-tag" ${tagStyle}>${escapeHTML(safeCategory)}</span>
-                    </div>
-                    <div class="song-title">${highlightMatch(song.name, searchInput.value)}</div>
-                    <div class="song-footer">
-                        <div class="song-meta-stack">
-                            <div class="song-date" title="${song.lastUpdated ? new Date(song.lastUpdated).toLocaleString() : ''}">
-                                <i class="fa-solid fa-clock-rotate-left"></i> ${formattedDate}
-                            </div>
-                            <div class="song-owner">
-                                <i class="fa-solid fa-user-pen"></i> ${escapeHTML(trackMetaLabel(song))}
-                            </div>
-                        </div>
-                        <div class="copy-actions">
-                            <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)">
-                                <i class="fa-solid fa-copy"></i> Copy Lua
-                            </button>
-                            ${canEditTrack(song) ? `
-                            <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByKey('${escapeJS(song.id)}', '${escapeJS(song.owner || '')}')">
-                                <i class="fa-solid fa-pen"></i> Edit
-                            </button>` : ''}
-                        </div>
-                    </div>
-                `;
-                
-                // Attach mouse parallax tilt listener
-                applyCardTiltEffect(card);
-                songsGridContainer.appendChild(card);
-            });
-        }
-
-        // Interactive mouse-hover 3D tilt effect on cards
-        function applyCardTiltEffect(card) {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const xc = rect.width / 2;
-                const yc = rect.height / 2;
-                const angleX = (yc - y) / 18; // Vertical tilt angle
-                const angleY = (x - xc) / 18; // Horizontal tilt angle
-                
-                card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-4px)`;
-            });
-            
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
-            });
-        }
-
-        // Render Table View
-        function renderTableView() {
-            songsTableBody.innerHTML = '';
-            
-            filteredSongs.forEach(song => {
-                const tr = document.createElement('tr');
-                const theme = getCategoryTheme(song.category);
-                const tagStyle = theme ? `style="--tag-bg: ${theme.bg}; --tag-text: ${theme.text}; --tag-border: ${theme.border};"` : '';
-                
-                tr.innerHTML = `
-                    <td>
-                        <span class="song-id-badge" onclick="copyRawId('${escapeHTML(song.id)}', this)" title="Click to copy raw ID">
-                            <i class="fa-solid fa-hashtag"></i> <span>${escapeHTML(song.id)}</span>
-                        </span>
-                    </td>
-                    <td class="song-title" style="font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500; text-transform: none;">
-                        ${highlightMatch(song.name, searchInput.value)}
-                    </td>
-                    <td>
-                        <span class="song-category-tag" ${tagStyle}>${escapeHTML(song.category || 'Unassigned')}</span>
-                        <div class="song-owner" style="margin-top:.45rem;">${escapeHTML(trackMetaLabel(song))}</div>
-                    </td>
-                    <td>
-                        <button class="btn-copy-lua" onclick="copySongLua('${escapeJS(song.id)}', '${escapeJS(song.name)}', '${escapeJS(song.category)}', this)" style="padding: 0.35rem 0.65rem;">
-                            <i class="fa-solid fa-copy"></i> Lua
-                        </button>
-                        ${canEditTrack(song) ? `
-                        <button class="btn-copy-lua btn-edit-track" onclick="openTrackModalByKey('${escapeJS(song.id)}', '${escapeJS(song.owner || '')}')" style="padding: 0.35rem 0.65rem;margin-left:.35rem;">
-                            <i class="fa-solid fa-pen"></i> Edit
-                        </button>` : ''}
-                    </td>
-                `;
-                
-                songsTableBody.appendChild(tr);
-            });
-        }
-
-        function canEditSheet() {
-            return !!currentEditor;
-        }
-
-        function canEditTrack(song) {
-            if (!currentEditor || !song) return false;
-            if (currentEditor.canEdit) return true;
-            return !!song.owner && song.owner === currentEditor.code;
-        }
-
-        function trackMetaLabel(song) {
-            if (song.updatedBy) return `Updated by ${song.updatedBy}`;
-            if (song.createdBy) return `Created by ${song.createdBy}`;
-            if (song.ownerName) return `Created by ${song.ownerName}`;
-            return 'Legacy row';
-        }
-
-        function requireEditor() {
-            if (canEditSheet()) return true;
-            showToast("Enter an access code before editing.", "error");
-            const badge = document.getElementById('codeUserBadge');
-            if (badge) badge.click();
-            return false;
-        }
-
-        function updateEditState() {
-            if (!btnAddTrack) return;
-            btnAddTrack.style.opacity = canEditSheet() ? '1' : '0.55';
-            btnAddTrack.title = canEditSheet() ? 'Add a track to Google Sheet' : 'Enter access code to add tracks';
-        }
-
-        function openTrackModalByKey(id, owner) {
-            if (!requireEditor()) return;
-            const song = allSongs.find(s => s.id === id && String(s.owner || '') === String(owner || ''));
-            if (!song) {
-                showToast("Track row not found. Refresh and try again.", "error");
-                return;
-            }
-            if (!canEditTrack(song)) {
-                showToast("You can only edit your own tracks.", "error");
-                return;
-            }
-            openTrackModal(song);
-        }
-
-        function openTrackModal(song = null) {
-            editingRowNumber = song ? song.rowNumber : null;
-            editingOriginalSong = song ? { id: song.id, owner: song.owner || '' } : null;
-            trackModalTitle.innerText = song ? 'Edit Track' : 'Add Track';
-            trackIdInput.value = song ? song.id : '';
-            trackNameInput.value = song ? song.name : '';
-            trackCategoryInput.value = song ? song.category : '';
-            btnDeleteTrack.style.display = song ? 'inline-flex' : 'none';
-            trackModal.classList.add('open');
-            setTimeout(() => trackIdInput.focus(), 80);
-        }
-
-        function closeTrackModal() {
-            trackModal.classList.remove('open');
-            editingRowNumber = null;
-            editingOriginalSong = null;
-        }
-
-        async function saveTrackFromModal() {
-            if (!requireEditor()) return;
-            const song = {
-                id: trackIdInput.value.trim(),
-                name: trackNameInput.value.trim(),
-                category: trackCategoryInput.value.trim()
-            };
-            if (!song.id || !song.name) {
-                showToast("ID and Name are required.", "error");
-                return;
-            }
-
-            const action = editingRowNumber ? 'update' : 'add';
-            await writeSheet(action, { song, original: editingOriginalSong });
-        }
-
-        async function deleteTrackFromModal() {
-            if (!requireEditor() || !editingOriginalSong) return;
-            const name = trackNameInput.value.trim() || editingOriginalSong.id;
-            if (!confirm(`Move "${name}" to Trash? You can restore it later from Trash.`)) return;
-            await writeSheet('delete', { original: editingOriginalSong });
-        }
-
-        async function loadTrash() {
-            if (!requireEditor()) return;
-            if (!SHEET_API_URL) {
-                showToast("Set the Sheet API URL first.", "error");
-                guideModal.classList.add('open');
-                return;
-            }
-
-            trashList.innerHTML = '<div class="trash-meta"><i class="fa-solid fa-circle-notch spin"></i> Loading trash...</div>';
-            try {
-                const url = `${SHEET_API_URL}?action=trash&code=${encodeURIComponent(currentEditor.code)}&canEdit=${currentEditor.canEdit === true}`;
-                const response = await fetch(url);
-                const result = await response.json();
-                if (!response.ok || result.ok === false) throw new Error(result.error || 'Trash API failed');
-                renderTrash(result.trash || []);
-            } catch (err) {
-                trashList.innerHTML = `<div class="trash-meta">Trash load failed: ${escapeHTML(err.message)}</div>`;
-            }
-        }
-
-        function renderTrash(items) {
-            if (!items.length) {
-                trashList.innerHTML = '<div class="trash-meta">Trash is empty.</div>';
-                return;
-            }
-
-            trashList.innerHTML = '';
-            items.forEach(item => {
-                const node = document.createElement('div');
-                node.className = 'trash-item';
-                node.innerHTML = `
-                    <div class="trash-title">${escapeHTML(item.name || item.id)}</div>
-                    <div class="trash-meta">
-                        ID: ${escapeHTML(item.id)}<br>
-                        Category: ${escapeHTML(item.category || 'Unassigned')}<br>
-                        Created by: ${escapeHTML(item.createdBy || item.ownerName || 'Unknown')}<br>
-                        Deleted by: ${escapeHTML(item.deletedBy || 'Unknown')}<br>
-                        Deleted at: ${escapeHTML(formatMaybeDate(item.deletedAt))}
-                    </div>
-                    <button class="btn btn-primary" onclick="restoreTrashItem('${escapeJS(item.id)}', '${escapeJS(item.owner || '')}')">
-                        <i class="fa-solid fa-trash-arrow-up"></i> Restore
-                    </button>
-                `;
-                trashList.appendChild(node);
-            });
-        }
-
-        async function restoreTrashItem(id, owner) {
-            if (!requireEditor()) return;
-            if (!confirm(`Restore "${id}" back to the main sheet?`)) return;
-            await writeSheet('restore', { original: { id, owner } });
-            await loadTrash();
-        }
-
-        async function writeSheet(action, payload) {
-            if (!SHEET_API_URL) {
-                showToast("Set the Sheet API URL first.", "error");
-                sheetApiUrlInput.value = SHEET_API_URL;
-                guideModal.classList.add('open');
-                return;
-            }
-
-            const btn = action === 'delete' ? btnDeleteTrack : btnSaveTrack;
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i> Saving...';
-
-            try {
-                const response = await fetch(SHEET_API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action,
-                        original: payload.original || null,
-                        song: payload.song || null,
-                        code: currentEditor.code,
-                        user: currentEditor.name,
-                        canEdit: currentEditor.canEdit === true
-                    })
-                });
-
-                const text = await response.text();
-                let result = {};
-                try { result = JSON.parse(text); } catch (_) {}
-                if (!response.ok || result.ok === false) {
-                    throw new Error(result.error || `Sheet API failed: ${response.status}`);
-                }
-
-                closeTrackModal();
-                showToast(writeSuccessMessage(action), "success");
-                await loadSheetData();
-            } catch (err) {
-                showToast("Sheet update failed: " + err.message, "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
-            }
-        }
-
-        function writeSuccessMessage(action) {
-            if (action === 'delete') return 'Track moved to Trash.';
-            if (action === 'restore') return 'Track restored from Trash.';
-            return 'Track saved to sheet.';
-        }
-
-        // Render Code Preview Window at the bottom
-        function renderLuaExportPreview() {
-            filteredCount.innerText = filteredSongs.length;
-            
-            if (filteredSongs.length === 0) {
-                luaExportCode.innerText = '-- No songs matching current filter';
-                return;
-            }
-
-            let previewText = '';
-            
-            if (filteredSongs.length === 1) {
-                const s = filteredSongs[0];
-                previewText = formatLuaCode(s.id, s.name, s.category);
-            } else {
-                previewText = '{\n';
-                filteredSongs.slice(0, 10).forEach(s => {
-                    const block = formatLuaCode(s.id, s.name, s.category);
-                    const indented = block.split('\n').map(line => '    ' + line).join('\n');
-                    previewText += indented + '\n';
-                });
-                
-                if (filteredSongs.length > 10) {
-                    previewText += `    -- ... and ${filteredSongs.length - 10} more songs. Click 'Copy All Filtered' to export all.\n`;
-                }
-                
-                previewText += '}';
-            }
-
-            luaExportCode.innerText = previewText;
-        }
-
-        // Copy Code to Clipboard Formatted as requested
-        function formatLuaCode(id, name, category) {
-            const escapedId = escapeLuaString(id);
-            const escapedName = escapeLuaString(name);
-            const escapedCategory = escapeLuaString(category);
-            
-            return `{\n        Id = "${escapedId}",\n        Name = "${escapedName}",\n        Category = "${escapedCategory}"\n    },`;
-        }
-
-        function escapeLuaString(str) {
-            return str
-                .replace(/\\/g, '\\\\')
-                .replace(/"/g, '\\"')
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '');
-        }
-
-        // Copy single song Lua definition
-        function copySongLua(id, name, category, element) {
-            const luaCode = formatLuaCode(id, name, category);
-            copyToClipboard(luaCode);
-            showToast(`Copied Lua table: "${name}"`, "success");
-            
-            if (element) {
-                const origHTML = element.innerHTML;
-                element.classList.add('copied');
-                element.innerHTML = `<i class="fa-solid fa-check"></i> Copied`;
-                
-                setTimeout(() => {
-                    element.classList.remove('copied');
-                    element.innerHTML = origHTML;
-                }, 2000);
-            }
-        }
-
-        // Copy all currently filtered songs as a bulk Lua array
-        function copyAllFiltered() {
-            if (filteredSongs.length === 0) return;
-            
-            let luaCode = '{\n';
-            filteredSongs.forEach(s => {
-                const block = formatLuaCode(s.id, s.name, s.category);
-                const indented = block.split('\n').map(line => '    ' + line).join('\n');
-                luaCode += indented + '\n';
-            });
-            luaCode += '}';
-
-            copyToClipboard(luaCode);
-            showToast(`Copied all ${filteredSongs.length} songs to clipboard!`, "success");
-
-            const origHTML = btnCopyAllFiltered.innerHTML;
-            btnCopyAllFiltered.innerHTML = `<i class="fa-solid fa-check"></i> Copied All!`;
-            btnCopyAllFiltered.style.background = 'var(--gold)';
-            btnCopyAllFiltered.style.color = 'var(--bg)';
-            
-            setTimeout(() => {
-                btnCopyAllFiltered.innerHTML = origHTML;
-                btnCopyAllFiltered.style.background = '';
-                btnCopyAllFiltered.style.color = '';
-            }, 2000);
-        }
-
-        // Copy raw ID directly
-        function copyRawId(id, element) {
-            copyToClipboard(id);
-            showToast(`Copied raw asset ID: ${id}`, "info");
-            
-            if (element) {
-                const span = element.querySelector('span');
-                const prevText = span.innerText;
-                span.innerText = "Copied!";
-                element.style.borderColor = 'var(--gold)';
-                setTimeout(() => {
-                    span.innerText = prevText;
-                    element.style.borderColor = '';
-                }, 1000);
-            }
-        }
-
-        // System Utilities
-        function copyToClipboard(text) {
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
-            toast.innerHTML = `
-                <i class="fa-solid ${icon}"></i>
-                <span>${message}</span>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.add('fade-out');
-                toast.addEventListener('animationend', () => {
-                    toast.remove();
-                });
-            }, 3000);
-        }
-
-        function showLoading(isLoading) {
-            if (isLoading) {
-                loadingSkeleton.style.display = 'grid';
-                songsGridContainer.style.display = 'none';
-                songsTableContainer.style.display = 'none';
-                previewPane.style.display = 'none';
-                emptyState.style.display = 'none';
-            } else {
-                loadingSkeleton.style.display = 'none';
-            }
-        }
-
-        function updateBadgeStatus(status, text) {
-            connStatusText.innerText = text;
-            
-            const heroConnBadge = document.getElementById('heroConnBadge');
-            const heroConnText = document.getElementById('heroConnText');
-            const heroDot = document.getElementById('heroDot');
-            
-            if (status === 'connected') {
-                connBadge.className = 'connection-badge';
-                if (heroConnBadge) {
-                    heroConnBadge.className = 'connection-badge';
-                    heroConnText.innerText = 'Database connected \u2014 ' + allSongs.length + ' tracks loaded';
-                    heroDot.className = 'pulse-dot pulse';
-                }
-            } else if (status === 'connecting') {
-                connBadge.className = 'connection-badge';
-                if (heroConnBadge) {
-                    heroConnText.innerText = 'Connecting to database...';
-                    heroDot.className = 'pulse-dot';
-                }
-            } else {
-                connBadge.className = 'connection-badge disconnected';
-                if (heroConnBadge) {
-                    heroConnBadge.className = 'connection-badge disconnected';
-                    heroConnText.innerText = 'Connection failed';
-                    heroDot.className = 'pulse-dot';
-                }
-            }
-        }
-
-        // Helper to format timestamps relatively
-        function formatRelativeTime(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            
-            const diffHours = Math.floor(diffMins / 60);
-            if (diffHours < 24) return `${diffHours}h ago`;
-            
-            return date.toLocaleDateString('th-TH', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-            }) + ' ' + date.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-
-        // Helper to highlight matching text in searches
-        function highlightMatch(text, query) {
-            if (!query) return escapeHTML(text);
-            const GlenQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            const regex = new RegExp(`(${GlenQuery})`, 'gi');
-            return escapeHTML(text).replace(regex, '<span style="background: rgba(196, 163, 90, 0.25); color: var(--gold-b); border-radius: 2px; padding: 0 2px;">$1</span>');
-        }
-
-        // Escape helper functions
-        function escapeHTML(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function escapeJS(str) {
-            return String(str)
-                .replace(/\\/g, '\\\\')
-                .replace(/'/g, "\\'")
-                .replace(/"/g, '\\"')
-                .replace(/\n/g, '\\n');
-        }
-
-        function formatMaybeDate(date) {
-            if (!date) return 'Unknown';
-            if (typeof date === 'string') {
-                const d = new Date(date);
-                if (isNaN(d.getTime())) return date;
-                date = d;
-            }
-            if (!(date instanceof Date)) return 'Unknown';
-            return date.toLocaleDateString('th-TH', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-            }) + ' ' + date.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-    </script>
+        `;
+        list.appendChild(item);
+    });
+    document.getElementById('statusBar').textContent = `${codes.length} code(s) active`;
+}
+
+// ===== ADD CODE =====
+document.getElementById('btnAddCode').addEventListener('click', async () => {
+    const name    = document.getElementById('newName').value.trim();
+    const code    = document.getElementById('newCode').value.trim();
+    const canEdit = document.getElementById('newCanEdit').checked;
+
+    if (!name || !code) { toast('Name and Code are required.', false); return; }
+    if (!SHEET_API_URL) { toast('Set Apps Script URL first.', false); return; }
+
+    const btn = document.getElementById('btnAddCode');
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch loading-spin"></i> Saving...';
+
+    try {
+        let codes = await getCurrentCodes();
+        if (codes.find(c => c.code === code)) { toast('Code already exists!', false); return; }
+        codes.push({ name, code, canEdit });
+        await saveCodes(codes);
+        renderCodes(codes);
+        document.getElementById('newName').value = '';
+        document.getElementById('newCode').value = '';
+        document.getElementById('newCanEdit').checked = false;
+        toast(`Code "${code}" added!`, true);
+    } catch(e) {
+        toast('Error: ' + e.message, false);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Code';
+    }
+});
+
+async function deleteCode(idx) {
+    if (!confirm('Delete this code?')) return;
+    try {
+        let codes = await getCurrentCodes();
+        const removed = codes.splice(idx, 1)[0];
+        await saveCodes(codes);
+        renderCodes(codes);
+        toast(`Deleted code "${removed.code}"`, true);
+    } catch(e) {
+        toast('Error: ' + e.message, false);
+    }
+}
+
+async function getCurrentCodes() {
+    const res = await fetch(`${SHEET_API_URL}?action=get_codes`);
+    if (!res.ok) throw new Error('Failed to fetch codes');
+    const data = await res.json();
+    return data.codes || [];
+}
+
+// ===== UTILS =====
+function escH(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg, ok=true) {
+    const tc = document.getElementById('toastC');
+    const t  = document.createElement('div');
+    t.className = `toast ${ok?'ok':'fail'}`;
+    t.innerHTML = `<i class="fa-solid ${ok?'fa-circle-check':'fa-circle-xmark'}"></i><span>${msg}</span>`;
+    tc.appendChild(t);
+    setTimeout(()=> t.remove(), 3500);
+}
+</script>
 </body>
 </html>
