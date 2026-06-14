@@ -149,6 +149,14 @@ input:checked + .slider::before { transform:translateX(20px); background:var(--g
         </div>
         <button class="btn btn-sm" id="btnSaveCfg" style="margin-top:.75rem;"><i class="fa-solid fa-floppy-disk"></i> Save Config</button>
         <span id="cfgStatus" style="font-family:var(--font-mono);font-size:.72rem;color:var(--m2);margin-left:.75rem;"></span>
+        <br><br>
+        <strong>⚠️ If you see CORS errors:</strong>
+        <ul style="margin-top:.5rem;padding-left:1.2rem;">
+            <li>Deploy as <strong>Web app</strong> (not API executable)</li>
+            <li>Set <strong>Execute as: Me</strong></li>
+            <li>Set <strong>Who has access: Anyone</strong></li>
+            <li>Wait 1-2 minutes after deployment</li>
+        </ul>
     </div>
 
     <!-- Add Code Form -->
@@ -382,4 +390,3 @@ function toast(msg, ok=true) {
 </script>
 </body>
 </html>
- 
