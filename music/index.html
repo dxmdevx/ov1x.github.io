@@ -1738,7 +1738,12 @@
                     <li><strong>Make the sheet private</strong> - Click Share → Change to "Only you can access".</li>
                     <li>In the top menu, select <strong>Extensions</strong> &gt; <strong>Apps Script</strong>.</li>
                     <li>Delete any code in the editor and paste the script below.</li>
-                    <li>Deploy as a <strong>Web app</strong>, set "Who has access" to <strong>Anyone</strong>, then copy the Web App URL.</li>
+                    <li>Click <strong>Deploy</strong> &gt; <strong>New deployment</strong>.</li>
+                    <li>Select type: <strong>Web app</strong>.</li>
+                    <li>Set <strong>Execute as</strong>: <strong>Me</strong> (your email).</li>
+                    <li>Set <strong>Who has access</strong>: <strong>Anyone</strong>.</li>
+                    <li>Click <strong>Deploy</strong> and copy the <strong>Web App URL</strong>.</li>
+                    <li><strong>Important</strong>: After deploying, wait 1-2 minutes for the deployment to propagate.</li>
                     <li>Use the <a href="admin.html" target="_blank" style="color: var(--gold);">Admin Panel</a> to manage access codes (password: fxf-admin-2026).</li>
                 </ol>
                 <div class="code-block-wrapper">
@@ -1776,7 +1781,12 @@ function verifyCode(code) {
 function doGet(e) {
   var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
 
-  // Verify access code for all actions
+  // Admin code management actions (no auth required for setup)
+  if (action === 'get_codes') {
+    return reply({ ok: true, codes: getAccessCodes() });
+  }
+
+  // Verify access code for all other actions
   var code = String((e.parameter && e.parameter.code) || '').trim();
   var requester = verifyCode(code);
   if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
@@ -1990,40 +2000,6 @@ function logAudit(sheet, action, id, name, requester) {
   sheet.appendRow([new Date(), action, id, name, requester.name, requester.code]);
 }
 
-// Access Code Management (for Admin Panel)
-function doGet(e) {
-  var action = String((e.parameter && e.parameter.action) || '').toLowerCase();
-
-  // Admin code management actions (no auth required for setup)
-  if (action === 'get_codes') {
-    return reply({ ok: true, codes: getAccessCodes() });
-  }
-
-  // Verify access code for all other actions
-  var code = String((e.parameter && e.parameter.code) || '').trim();
-  var requester = verifyCode(code);
-  if (!requester) return reply({ ok: false, error: 'Invalid or missing access code' });
-
-  if (action === 'trash') {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var trash = getOrCreateSheet(ss, TRASH_SHEET, trashHeaders());
-
-    var rows = sheetRows(trash, trashHeaders().length).filter(function(row) {
-      return requester.canEdit || String(row[4] || '').trim() === code;
-    }).map(function(row) {
-      return {
-        id: row[0], name: row[1], category: row[2], lastUpdated: row[3],
-        owner: row[4], ownerName: row[5], createdBy: row[6], createdAt: row[7],
-        updatedBy: row[8], updatedAt: row[9], deletedBy: row[10], deletedAt: row[11],
-        deletedReason: row[12]
-      };
-    });
-    return reply({ ok: true, trash: rows });
-  }
-
-  return reply({ ok: false, error: 'Unknown action' });
-}
-
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -2122,13 +2098,23 @@ function doPost(e) {
 }
 
 function reply(data) {
-  return ContentService
+  var output = ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+  return output;
 }</code></pre>
                 </div>
                 <h3>Sheet Columns</h3>
                 <p>Main sheet uses columns A-J: <strong>ID</strong>, <strong>Name</strong>, <strong>Category</strong>, <strong>Auto time update</strong>, <strong>Owner Code</strong>, <strong>Owner Name</strong>, <strong>Created By</strong>, <strong>Created At</strong>, <strong>Updated By</strong>, and <strong>Updated At</strong>. Deleted tracks move to the Trash sheet and every action is logged in Audit Log.</p>
+                <h3>Troubleshooting CORS Errors</h3>
+                <p>If you see "CORS header 'Access-Control-Allow-Origin' missing" or "Status code: 405":</p>
+                <ul>
+                    <li>Make sure you deployed as <strong>Web app</strong> (not API executable)</li>
+                    <li>Set <strong>Execute as: Me</strong> (your email)</li>
+                    <li>Set <strong>Who has access: Anyone</strong></li>
+                    <li>Wait 1-2 minutes after deployment before testing</li>
+                    <li>If still failing, go to Apps Script → Deploy → Manage deployments → Delete old deployments and redeploy</li>
+                </ul>
                 <button class="btn btn-primary" id="btnGotIt" style="width: 100%; margin-top: 0.5rem;">
                     Done, I got it!
                 </button>
