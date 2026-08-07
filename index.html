@@ -27,7 +27,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="ov1x — Live Discord Profile">
-<meta name="theme-color" content="#060606">
+<meta name="theme-color" content="#040404">
 <meta name="color-scheme" content="dark">
 
 <!-- Twitter -->
@@ -37,7 +37,7 @@
 <meta name="twitter:image" content="https://ov1x.is-a.dev/og.png">
 <meta name="twitter:image:alt" content="ov1x — Live Discord Profile">
 
-<!-- Security headers (best-effort via meta; see note for true header-based hardening) -->
+<!-- Security headers (best-effort via meta) -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; frame-src 'none'; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net https://i.scdn.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.lanyard.rest wss://api.lanyard.rest https://ipwho.is https://ipapi.co https://cloudflareinsights.com; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; manifest-src 'self'; upgrade-insecure-requests">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="interest-cohort=(), camera=(), microphone=(), geolocation=()">
@@ -51,42 +51,56 @@
 <link rel="dns-prefetch" href="https://i.scdn.co">
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500&display=swap"
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400;1,500&family=DM+Mono:wght@300;400&family=Outfit:wght@200;300;400;500&display=swap"
   rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"></noscript>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400;1,500&family=DM+Mono:wght@300;400&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet"></noscript>
 
 <!-- Favicon (dynamic; swapped to live avatar once presence loads) -->
-<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23060606'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23c4a35a' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="icon" id="favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23040404'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23c9a962' stroke-width='2.4'/%3E%3C/svg%3E">
 
 <!-- JSON-LD -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"ov1x","description":"Live Discord bio card","url":"https://ov1x.is-a.dev/"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"ov1x","description":"Live Discord bio card","url":"https://ov1x.is-a.dev/","email":"mailto:dxm.dev@atomicmail.io"}</script>
 
 <style>
 /* ════════════════════════════════════════
-   RESET & TOKENS
+   RESET & DESIGN TOKENS
+   Palette — "gold-noir, refined":
+   bg        #040404  near-black stage
+   gold      #c9a962  brand metal
+   champagne #ecd9a8  metal highlight
+   ivory     #f2ede2  text
+   status    Discord green / amber / red
 ════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --gold:#c4a35a; --gold-b:#d4b86a; --gold-dim:rgba(196,163,90,.18);
-  --gold-glow:rgba(196,163,90,.055); --gold-sub:rgba(196,163,90,.07);
-  --gold-hi:rgba(196,163,90,.38);
+  --gold:#c9a962; --champ:#ecd9a8;
+  --gold-dim:rgba(201,169,98,.18);
+  --gold-glow:rgba(201,169,98,.055);
+  --gold-sub:rgba(201,169,98,.07);
+  --gold-hi:rgba(201,169,98,.38);
 
-  --bg:#060606; --card:rgba(10,10,10,.97);
-  --border:rgba(196,163,90,.13); --border2:rgba(255,255,255,.028);
+  --bg:#040404; --card:rgba(9,9,9,.965);
+  --border:rgba(201,169,98,.14); --border2:rgba(255,255,255,.03);
 
-  --white:#f0ece4; --m1:rgba(240,236,228,.45); --m2:rgba(240,236,228,.20);
-  --m3:rgba(240,236,228,.10);
+  --white:#f2ede2; --m1:rgba(242,237,226,.46); --m2:rgba(242,237,226,.22);
+  --m3:rgba(242,237,226,.10);
 
   --online:#3ba55c; --idle:#faa61a; --dnd:#ed4245; --offline:#4e5761;
 
-  --r:20px; --r2:12px; --r3:8px;
+  /* presence-reactive halo (JS updates --halo via body[data-status]) */
+  --halo:rgba(201,169,98,.10);
+
+  --r:22px; --r2:13px; --r3:9px;
   --font-d:'Cormorant Garamond',Georgia,serif;
   --font-b:'Outfit',sans-serif;
   --font-m:'DM Mono',monospace;
   --ease-x:cubic-bezier(.16,1,.3,1);
   --ease-s:cubic-bezier(.34,1.56,.64,1);
 }
+body[data-status="online"]{--halo:rgba(74,165,110,.10)}
+body[data-status="idle"]  {--halo:rgba(250,166,26,.09)}
+body[data-status="dnd"]   {--halo:rgba(237,66,69,.09)}
 
 html,body{
   width:100%;height:100%;overflow:hidden;
@@ -101,7 +115,7 @@ html,body{
 }
 
 img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
-.copy-btn,.dm-btn,.handle,.tag,.atile,.pi-item,.av,#perfMon,#perfMon *,#me-overlay,#me-overlay *{pointer-events:auto;}
+.copy-btn,.dm-btn,.em-btn,.em-note,.handle,.tag,.atile,.pi-item,.av,#perfMon,#perfMon *,#me-overlay,#me-overlay *{pointer-events:auto;}
 
 .skip-link{position:absolute;top:-100%;left:8px;background:var(--gold);color:#000;
   padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
@@ -126,15 +140,15 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   display:flex;align-items:flex-end;justify-content:center;
 }
 .sm-ground{
-  position:absolute;bottom:0;left:10%;right:10%;
+  position:absolute;bottom:0;left:6%;right:6%;
   height:1px;
-  background:linear-gradient(90deg,transparent,rgba(196,163,90,.3),transparent);
+  background:linear-gradient(90deg,transparent,rgba(201,169,98,.35),transparent);
 }
 .sm-shadow-el{
   position:absolute;bottom:2px;left:50%;
   transform:translateX(-50%);
   width:34px;height:5px;border-radius:50%;
-  background:rgba(196,163,90,.08);
+  background:rgba(201,169,98,.08);
   animation:sm-shadow .5s ease-in-out infinite;
 }
 @keyframes sm-shadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.2}50%{transform:translateX(-50%) scaleX(.65);opacity:.08}}
@@ -173,7 +187,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   font-family:var(--font-m);
   font-size:9px;letter-spacing:4.5px;
   text-transform:uppercase;
-  color:var(--gold);opacity:.4;
+  color:var(--gold);opacity:.45;
 }
 .ld-dots{display:flex;gap:3px;align-items:center;}
 .ld-dot{
@@ -190,7 +204,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   font-family:var(--font-m);
   font-size:7px;letter-spacing:3px;
   text-transform:uppercase;
-  color:rgba(196,163,90,.2);
+  color:rgba(201,169,98,.22);
   opacity:0;transition:opacity .5s;
 }
 .ld-sub.show{opacity:1;}
@@ -202,15 +216,12 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 #vig{
   position:fixed;inset:0;z-index:1;pointer-events:none;
   background:
-    radial-gradient(ellipse at center,transparent 0%,rgba(0,0,0,.78) 100%),
-    radial-gradient(ellipse at 50% 0%,rgba(196,163,90,.025) 0%,transparent 55%);
+    radial-gradient(ellipse at center,transparent 0%,rgba(0,0,0,.8) 100%),
+    radial-gradient(ellipse at 50% 0%,rgba(201,169,98,.03) 0%,transparent 55%);
 }
 
 /* ════════════════════════════════════════
    SCENE & CARD WRAPPER
-   🔧 FIX: separated float onto its own wrapper
-   so tilt rotateY/rotateX on .card no longer
-   overrides the float translateY on parent.
 ════════════════════════════════════════ */
 .scene{
   position:fixed;inset:0;z-index:2;
@@ -225,11 +236,27 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   opacity:0;
   animation:cw-in .9s var(--ease-x) .3s forwards;
   will-change:opacity;
+  position:relative;
 }
 @keyframes cw-in{from{opacity:0}to{opacity:1}}
 
+/* ✨ SIGNATURE — presence halo:
+   soft light breathing behind the card, its hue follows
+   the live Discord status (gold → green / amber / red). */
+.halo{
+  position:absolute;inset:-70px;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center,var(--halo) 0%,transparent 62%);
+  filter:blur(24px);
+  animation:halo-breathe 7s ease-in-out infinite;
+  pointer-events:none;z-index:0;
+  transition:background 1.2s ease;
+}
+@keyframes halo-breathe{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.03)}}
+
 /* middle: floating bob (independent from tilt) */
 .cw-float{
+  position:relative;z-index:1;
   animation:float 9s ease-in-out 1.2s infinite;
   will-change:transform;
   transform-style:preserve-3d;
@@ -239,10 +266,10 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 /* inner: receives tilt transform only */
 .card{
   position:relative;
-  width:360px;
+  width:364px;
   max-height:calc(100dvh - 32px);
   overflow-y:auto;overflow-x:hidden;
-  padding:30px 24px 26px;
+  padding:32px 26px 26px;
   background:var(--card);
   backdrop-filter:blur(48px) saturate(1.6);
   -webkit-backdrop-filter:blur(48px) saturate(1.6);
@@ -260,16 +287,16 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   scrollbar-width:none;
 }
 .card::-webkit-scrollbar{display:none;}
-.card:focus-visible{outline:1px solid rgba(196,163,90,.4);outline-offset:4px;}
+.card:focus-visible{outline:1px solid rgba(201,169,98,.4);outline-offset:4px;}
 
 /* rotating border beam */
 @property --ba{syntax:'<angle>';initial-value:0deg;inherits:false;}
 .beam{
   position:absolute;inset:-1px;border-radius:calc(var(--r)+1px);
-  background:conic-gradient(from var(--ba),transparent 0%,transparent 40%,rgba(196,163,90,.65) 50%,transparent 60%,transparent 100%);
+  background:conic-gradient(from var(--ba),transparent 0%,transparent 40%,rgba(236,217,168,.7) 50%,transparent 60%,transparent 100%);
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;
-  animation:beam-r 7s linear infinite;
+  animation:beam-r 8s linear infinite;
   pointer-events:none;z-index:0;
 }
 @keyframes beam-r{to{--ba:360deg}}
@@ -277,15 +304,15 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 .card::before{
   content:'';position:absolute;top:0;left:15%;right:15%;height:1px;z-index:4;
   pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(196,163,90,.6),transparent);
+  background:linear-gradient(90deg,transparent,rgba(236,217,168,.6),transparent);
   animation:shim-top 6s ease-in-out infinite;
 }
-@keyframes shim-top{0%,100%{opacity:.1;left:25%;right:25%}50%{opacity:.65;left:8%;right:8%}}
+@keyframes shim-top{0%,100%{opacity:.1;left:25%;right:25%}50%{opacity:.6;left:8%;right:8%}}
 
 .card::after{
   content:'';position:absolute;inset:0;border-radius:var(--r);
   z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse at 50% -5%,rgba(196,163,90,.08) 0%,transparent 55%);
+  background:radial-gradient(ellipse at 50% -5%,rgba(201,169,98,.09) 0%,transparent 55%);
 }
 .card>*{position:relative;z-index:2;}
 
@@ -308,111 +335,151 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   transition:background .4s, box-shadow .4s;
 }
 .conn-badge.live .conn-pip{background:var(--online);box-shadow:0 0 6px rgba(59,165,92,.7);}
-.conn-badge.live{color:rgba(240,236,228,.4);border-color:rgba(59,165,92,.15);}
+.conn-badge.live{color:rgba(242,237,226,.4);border-color:rgba(59,165,92,.15);}
 .conn-badge.rest .conn-pip{background:var(--idle);box-shadow:0 0 6px rgba(250,166,26,.5);}
-.conn-badge.rest{color:rgba(240,236,228,.35);border-color:rgba(250,166,26,.12);}
+.conn-badge.rest{color:rgba(242,237,226,.35);border-color:rgba(250,166,26,.12);}
 .conn-badge.err .conn-pip{background:var(--dnd);}
 
-/* ── Eyebrow ── */
+/* ── Eyebrow — hairline crest ── */
 .eyebrow{
-  text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:22px;
+}
+.eyebrow .el{flex:1;height:1px;max-width:70px;
+  background:linear-gradient(90deg,transparent,rgba(201,169,98,.28));}
+.eyebrow .er{flex:1;height:1px;max-width:70px;
+  background:linear-gradient(90deg,rgba(201,169,98,.28),transparent);}
+.eyebrow .et{
   font-family:var(--font-m);font-size:7px;letter-spacing:5.5px;
-  text-transform:uppercase;color:var(--gold);opacity:.35;margin-bottom:20px;
+  text-transform:uppercase;color:var(--gold);opacity:.45;
+  white-space:nowrap;transform:translateX(2.75px);
 }
 
 /* ── Avatar ── */
-.av-wrap{position:relative;width:88px;height:88px;margin:0 auto 14px;}
-.av-ring{position:absolute;inset:-9px;width:calc(100%+18px);height:calc(100%+18px);animation:ring-r 6s linear infinite;pointer-events:none;}
+.av-wrap{position:relative;width:94px;height:94px;margin:0 auto 15px;}
+.av-ring{position:absolute;inset:-10px;width:calc(100%+20px);height:calc(100%+20px);animation:ring-r 7s linear infinite;pointer-events:none;}
 @keyframes ring-r{to{transform:rotate(360deg)}}
-.av{display:block;width:88px;height:88px;border-radius:50%;object-fit:cover;
-  border:2px solid rgba(196,163,90,.10);background:#111;
-  transition:border-color .5s,transform .3s var(--ease-s);}
+.av{display:block;width:94px;height:94px;border-radius:50%;object-fit:cover;
+  border:2px solid rgba(201,169,98,.12);background:#111;
+  box-shadow:0 0 26px var(--halo);
+  transition:border-color .5s,transform .3s var(--ease-s),box-shadow 1.2s ease;}
 .av:hover{transform:scale(1.04);}
-.sdot{position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;
-  border:2.5px solid #080808;background:var(--offline);
+.sdot{position:absolute;bottom:3px;right:3px;width:17px;height:17px;border-radius:50%;
+  border:3px solid #070707;background:var(--offline);
   transition:background .4s,box-shadow .4s;}
-.sdot.online{background:var(--online);box-shadow:0 0 10px rgba(59,165,92,.55);}
-.sdot.idle  {background:var(--idle);  box-shadow:0 0 10px rgba(250,166,26,.55);}
-.sdot.dnd   {background:var(--dnd);   box-shadow:0 0 10px rgba(237,66,69,.55);}
+.sdot.online{background:var(--online);box-shadow:0 0 12px rgba(59,165,92,.6);}
+.sdot.idle  {background:var(--idle);  box-shadow:0 0 12px rgba(250,166,26,.6);}
+.sdot.dnd   {background:var(--dnd);   box-shadow:0 0 12px rgba(237,66,69,.6);}
 
 /* ── Name & Handle ── */
-.dname{font-family:var(--font-d);font-size:21px;font-weight:600;text-align:center;
-  letter-spacing:2.5px;margin-bottom:4px;line-height:1.2;color:var(--white);}
+.dname{font-family:var(--font-d);font-size:26px;font-weight:500;text-align:center;
+  letter-spacing:3px;margin-bottom:5px;line-height:1.15;color:var(--white);
+  background:linear-gradient(180deg,var(--white) 60%,rgba(236,217,168,.75));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 
-.handle-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;}
+.handle-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px;}
 .handle{
   font-family:var(--font-m);font-size:10px;font-weight:300;
   color:var(--m1);letter-spacing:.4px;cursor:pointer;
   transition:color .2s;
 }
-.handle:hover{color:rgba(196,163,90,.7);}
+.handle:hover{color:rgba(201,169,98,.75);}
 .copy-btn{
   display:flex;align-items:center;justify-content:center;
   width:20px;height:20px;border-radius:5px;
   background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
   cursor:pointer;opacity:.45;transition:opacity .2s,background .2s,border-color .2s;
 }
-.copy-btn:hover{opacity:.9;background:rgba(196,163,90,.08);border-color:rgba(196,163,90,.2);}
+.copy-btn:hover{opacity:.9;background:rgba(201,169,98,.08);border-color:rgba(201,169,98,.2);}
 .copy-btn svg{pointer-events:none;}
 
-/* ── Status line ── */
-.sline{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:7px;}
+/* ── Status pill ── */
+.sline{display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.spill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.05);
+  transition:border-color .4s,background .4s;
+}
 .spip{width:6px;height:6px;border-radius:50%;background:var(--offline);flex-shrink:0;
   transition:background .4s,box-shadow .4s;}
-.spip.online{background:var(--online);box-shadow:0 0 8px rgba(59,165,92,.6);}
+.spip.online{background:var(--online);box-shadow:0 0 8px rgba(59,165,92,.6);animation:pip-pulse 2.4s ease-in-out infinite;}
 .spip.idle  {background:var(--idle);  box-shadow:0 0 8px rgba(250,166,26,.6);}
 .spip.dnd   {background:var(--dnd);   box-shadow:0 0 8px rgba(237,66,69,.6);}
-.sval{font-family:var(--font-m);font-size:10px;font-weight:300;color:var(--m1);
-  transition:color .4s;letter-spacing:.5px;}
+@keyframes pip-pulse{0%,100%{box-shadow:0 0 4px rgba(59,165,92,.4)}50%{box-shadow:0 0 11px rgba(59,165,92,.85)}}
+.sval{font-family:var(--font-m);font-size:9.5px;font-weight:300;color:var(--m1);
+  transition:color .4s;letter-spacing:1.2px;text-transform:uppercase;}
 
-/* ── Custom Status ── */
+/* ── Custom Status — hanging serif quote ── */
 .cstatus{
   display:flex;align-items:center;justify-content:center;gap:5px;
-  font-size:11px;font-weight:300;font-style:italic;
-  color:rgba(196,163,90,.5);margin-bottom:15px;min-height:16px;
+  font-family:var(--font-d);
+  font-size:13.5px;font-weight:400;font-style:italic;
+  color:rgba(236,217,168,.55);margin-bottom:16px;min-height:18px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;
+  letter-spacing:.3px;
 }
+.cstatus:not(:empty)::before{content:'“';color:rgba(201,169,98,.4);font-size:16px;margin-right:1px;}
+.cstatus:not(:empty)::after {content:'”';color:rgba(201,169,98,.4);font-size:16px;margin-left:1px;}
 .cs-em{width:15px;height:15px;object-fit:contain;vertical-align:middle;flex-shrink:0;}
 
-/* ── DM Button ── */
-.dm-btn{
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  width:100%;padding:11px 16px;
+/* ── Contact row — Discord + Email ── */
+.btn-row{display:flex;gap:8px;margin-bottom:8px;}
+.dm-btn,.em-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  flex:1;padding:11px 10px;
   background:rgba(255,255,255,.02);
-  border:1px solid rgba(196,163,90,.13);
+  border:1px solid rgba(201,169,98,.14);
   border-radius:var(--r2);
-  color:rgba(240,236,228,.52);
-  font-family:var(--font-b);font-size:11.5px;font-weight:400;letter-spacing:.7px;
+  color:rgba(242,237,226,.55);
+  font-family:var(--font-b);font-size:11px;font-weight:400;letter-spacing:.7px;
   text-decoration:none;cursor:pointer;
   transition:background .25s,border-color .25s,color .25s,box-shadow .25s;
-  margin-bottom:14px;position:relative;overflow:hidden;
+  position:relative;overflow:hidden;
   -webkit-tap-highlight-color:transparent;
 }
-.dm-btn::before{
+.dm-btn::before,.em-btn::before{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(196,163,90,.05),transparent);
+  background:linear-gradient(90deg,transparent,rgba(236,217,168,.06),transparent);
   transform:translateX(-110%);transition:transform .55s ease;
 }
-.dm-btn:hover::before,.dm-btn:active::before{transform:translateX(110%);}
-.dm-btn:hover,.dm-btn:active{
-  background:rgba(255,255,255,.038);border-color:rgba(196,163,90,.27);
-  color:rgba(240,236,228,.85);box-shadow:0 0 22px rgba(196,163,90,.06);
+.dm-btn:hover::before,.dm-btn:active::before,
+.em-btn:hover::before,.em-btn:active::before{transform:translateX(110%);}
+.dm-btn:hover,.dm-btn:active,
+.em-btn:hover,.em-btn:active{
+  background:rgba(255,255,255,.038);border-color:rgba(201,169,98,.3);
+  color:rgba(242,237,226,.88);box-shadow:0 0 22px rgba(201,169,98,.07);
 }
-.dm-icon{flex-shrink:0;opacity:.58;transition:opacity .25s;}
-.dm-btn:hover .dm-icon{opacity:.85;}
-.dm-arr{margin-left:auto;font-size:10px;opacity:.28;transition:transform .25s,opacity .25s;}
-.dm-btn:hover .dm-arr{transform:translateX(4px);opacity:.6;}
+.dm-icon,.em-icon{flex-shrink:0;opacity:.58;transition:opacity .25s;}
+.dm-btn:hover .dm-icon,.em-btn:hover .em-icon{opacity:.88;}
+
+/* email address caption — click to copy */
+.em-note{
+  display:block;width:fit-content;margin:0 auto 15px;
+  font-family:var(--font-m);font-size:8.5px;font-weight:300;
+  letter-spacing:1px;color:rgba(201,169,98,.42);
+  cursor:pointer;border-bottom:1px dotted rgba(201,169,98,.22);
+  padding-bottom:1px;
+  transition:color .2s,border-color .2s;
+  background:none;border-top:none;border-left:none;border-right:none;
+}
+.em-note:hover{color:rgba(201,169,98,.8);border-bottom-color:rgba(201,169,98,.5);}
+.em-note .em-wink{color:rgba(242,237,226,.2);font-style:italic;margin-left:4px;letter-spacing:.4px;}
 
 /* ── Divider ── */
 .div{height:1px;border:none;
   background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
   margin:0 0 14px;}
 
-/* ── Section Label ── */
+/* ── Section Label — with trailing hairline ── */
 .slbl{
+  display:flex;align-items:center;gap:10px;
   font-family:var(--font-m);font-size:7.5px;font-weight:400;letter-spacing:4.5px;
-  text-transform:uppercase;color:var(--gold);opacity:.4;margin-bottom:10px;
+  text-transform:uppercase;color:var(--gold);opacity:.45;margin-bottom:11px;
 }
+.slbl::after{content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(201,169,98,.16),transparent);}
 
 /* ── Activity tile ── */
 .atile{
@@ -422,7 +489,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   transition:background .3s,border-color .3s;
   -webkit-tap-highlight-color:transparent;
 }
-.atile:hover,.atile:active{background:rgba(255,255,255,.03);border-color:rgba(196,163,90,.09);}
+.atile:hover,.atile:active{background:rgba(255,255,255,.03);border-color:rgba(201,169,98,.1);}
 .atile+.atile{margin-top:7px;}
 
 .a-thumb{width:46px;height:46px;border-radius:9px;flex-shrink:0;
@@ -436,14 +503,14 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 .a-detail{font-size:10.5px;font-weight:300;color:var(--m1);line-height:1.55;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .a-elapsed{font-family:var(--font-m);font-size:9px;font-weight:300;
-  color:rgba(196,163,90,.4);margin-top:4px;letter-spacing:.3px;}
+  color:rgba(201,169,98,.42);margin-top:4px;letter-spacing:.3px;}
 .no-act{text-align:center;font-family:var(--font-m);font-size:10px;
   font-style:italic;color:var(--m2);padding:16px 0;letter-spacing:1px;}
 
 /* ── Spotify bar ── */
 .sp-bar{margin-top:7px;height:1.5px;border-radius:1px;background:rgba(255,255,255,.05);}
 .sp-prog{height:100%;border-radius:1px;
-  background:linear-gradient(90deg,rgba(196,163,90,.45),var(--gold));
+  background:linear-gradient(90deg,rgba(201,169,98,.45),var(--champ));
   transition:width 1s linear;}
 
 /* ── Personal Info ── */
@@ -452,10 +519,10 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   border-radius:var(--r3);padding:10px 11px;
   transition:background .3s,border-color .3s;
   -webkit-tap-highlight-color:transparent;}
-.pi-item:hover{background:rgba(255,255,255,.027);border-color:rgba(196,163,90,.09);}
+.pi-item:hover{background:rgba(255,255,255,.027);border-color:rgba(201,169,98,.1);}
 .pi-item.full{grid-column:1/-1;}
 .pi-lbl{font-family:var(--font-m);font-size:7px;letter-spacing:3.5px;
-  text-transform:uppercase;color:var(--gold);opacity:.4;margin-bottom:5px;}
+  text-transform:uppercase;color:var(--gold);opacity:.42;margin-bottom:5px;}
 .pi-val{font-size:11.5px;font-weight:400;color:var(--white);line-height:1.5;}
 .pi-val.muted{color:var(--m1);font-style:italic;font-size:10.5px;}
 .pi-sub{display:block;font-size:9.5px;color:var(--m1);margin-top:1px;}
@@ -473,20 +540,20 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   display:inline-flex;align-items:center;gap:3px;
   font-family:var(--font-m);font-size:9px;font-weight:300;
   padding:3px 9px;border-radius:20px;
-  background:rgba(196,163,90,.04);border:1px solid rgba(196,163,90,.12);
-  color:rgba(196,163,90,.70);letter-spacing:.3px;
+  background:rgba(201,169,98,.04);border:1px solid rgba(201,169,98,.13);
+  color:rgba(201,169,98,.72);letter-spacing:.3px;
   transition:background .2s,border-color .2s,color .2s;
   cursor:default;-webkit-tap-highlight-color:transparent;
 }
-.tag:hover{background:rgba(196,163,90,.09);border-color:rgba(196,163,90,.3);color:rgba(196,163,90,.95);}
+.tag:hover{background:rgba(201,169,98,.1);border-color:rgba(201,169,98,.32);color:rgba(236,217,168,.95);}
 
 /* ── Card Footer ── */
 .cfoot{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:7px;}
-.fl{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(196,163,90,.12));}
-.flr{flex:1;height:1px;background:linear-gradient(90deg,rgba(196,163,90,.12),transparent);}
-.fdot{width:2px;height:2px;border-radius:50%;background:rgba(196,163,90,.18);}
+.fl{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,98,.13));}
+.flr{flex:1;height:1px;background:linear-gradient(90deg,rgba(201,169,98,.13),transparent);}
+.fdot{width:2px;height:2px;border-radius:50%;background:rgba(201,169,98,.2);}
 .ftxt{font-family:var(--font-m);font-size:6.5px;letter-spacing:4px;
-  text-transform:uppercase;color:rgba(196,163,90,.18);}
+  text-transform:uppercase;color:rgba(201,169,98,.2);}
 
 /* ════════════════════════════════════════
    PERFORMANCE MONITOR
@@ -495,12 +562,12 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   position:fixed;bottom:14px;left:14px;z-index:9997;
   display:flex;align-items:center;gap:6px;
   padding:6px 10px;border-radius:14px;
-  background:rgba(12,12,12,.75);
+  background:rgba(10,10,10,.75);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(196,163,90,.13);
+  border:1px solid rgba(201,169,98,.13);
   font-family:var(--font-m);font-size:8.5px;letter-spacing:.8px;
-  color:rgba(240,236,228,.55);
+  color:rgba(242,237,226,.55);
   cursor:pointer;
   transition:transform .2s var(--ease-s),background .2s,border-color .2s,opacity .3s;
   opacity:0;
@@ -511,22 +578,22 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   position:fixed;bottom:14px;right:14px;z-index:9997;
   display:none;align-items:center;gap:5px;
   padding:8px 12px;border-radius:14px;
-  background:rgba(12,12,12,.8);
+  background:rgba(10,10,10,.8);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(196,163,90,.22);
+  border:1px solid rgba(201,169,98,.22);
   font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-  color:rgba(196,163,90,.85);cursor:pointer;pointer-events:auto;
+  color:rgba(201,169,98,.85);cursor:pointer;pointer-events:auto;
   -webkit-tap-highlight-color:transparent;
   transition:background .2s,border-color .2s,transform .15s var(--ease-s);
 }
 #meBtn.show{display:inline-flex;}
-#meBtn:hover,#meBtn:active{background:rgba(18,18,18,.92);border-color:rgba(196,163,90,.45);transform:translateY(-1px);}
+#meBtn:hover,#meBtn:active{background:rgba(16,16,16,.92);border-color:rgba(201,169,98,.45);transform:translateY(-1px);}
 #perfMon.show{opacity:1;}
-#perfMon:hover{background:rgba(18,18,18,.9);border-color:rgba(196,163,90,.27);transform:translateY(-1px);}
+#perfMon:hover{background:rgba(16,16,16,.9);border-color:rgba(201,169,98,.27);transform:translateY(-1px);}
 #perfMon .pm-dot{
   width:5px;height:5px;border-radius:50%;
   background:var(--gold);
-  box-shadow:0 0 8px rgba(196,163,90,.5);
+  box-shadow:0 0 8px rgba(201,169,98,.5);
   animation:pm-pulse 1.8s ease-in-out infinite;
 }
 @keyframes pm-pulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
@@ -543,21 +610,21 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 #perfMon[data-grade="c"] .pm-dot{background:var(--dnd);box-shadow:0 0 8px rgba(237,66,69,.5);}
 
 /* ════════════════════════════════════════
-   TOAST NOTIFICATION
+   TOASTS
 ════════════════════════════════════════ */
 #toast-root{
-  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
-  z-index:99998;display:flex;flex-direction:column-reverse;gap:8px;
-  pointer-events:none;width:280px;
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  z-index:9998;display:flex;flex-direction:column;gap:8px;align-items:center;
+  pointer-events:none;
 }
 .toast{
   display:flex;align-items:center;gap:8px;
   padding:10px 14px;border-radius:10px;
-  background:rgba(18,18,18,.96);
-  border:1px solid rgba(196,163,90,.18);
+  background:rgba(16,16,16,.96);
+  border:1px solid rgba(201,169,98,.18);
   box-shadow:0 8px 32px rgba(0,0,0,.8);
   font-family:var(--font-m);font-size:10px;letter-spacing:.5px;
-  color:rgba(240,236,228,.75);
+  color:rgba(242,237,226,.75);
   backdrop-filter:blur(20px);
   animation:toast-in .35s var(--ease-s) forwards;
   pointer-events:all;
@@ -579,8 +646,8 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 }
 #kb-overlay.show{display:flex;}
 .kb-panel{
-  background:rgba(12,12,12,.98);
-  border:1px solid rgba(196,163,90,.15);
+  background:rgba(10,10,10,.98);
+  border:1px solid rgba(201,169,98,.15);
   border-radius:16px;padding:28px 32px;
   min-width:280px;
 }
@@ -628,15 +695,15 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 }
 .me-copy{
   width:100%;padding:9px;margin-bottom:10px;
-  background:rgba(196,163,90,.05);border:1px solid rgba(196,163,90,.18);
-  border-radius:var(--r3);color:rgba(196,163,90,.8);
+  background:rgba(201,169,98,.05);border:1px solid rgba(201,169,98,.18);
+  border-radius:var(--r3);color:rgba(201,169,98,.8);
   font-family:var(--font-m);font-size:9px;letter-spacing:2px;text-transform:uppercase;
   cursor:pointer;transition:background .2s,border-color .2s,color .2s;
 }
-.me-copy:hover{background:rgba(196,163,90,.1);border-color:rgba(196,163,90,.35);color:rgba(196,163,90,1);}
+.me-copy:hover{background:rgba(201,169,98,.1);border-color:rgba(201,169,98,.35);color:rgba(236,217,168,1);}
 .me-note{
   font-family:var(--font-m);font-size:7.5px;letter-spacing:1.5px;
-  text-transform:uppercase;color:rgba(240,236,228,.22);text-align:center;
+  text-transform:uppercase;color:rgba(242,237,226,.22);text-align:center;
 }
 
 /* ════════════════════════════════════════
@@ -644,18 +711,19 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 ════════════════════════════════════════ */
 @media(max-width:359px){
   .card{width:292px;padding:22px 14px 18px;}
-  .dname{font-size:18px;}
-  .av-wrap,.av{width:76px;height:76px;}
+  .dname{font-size:21px;}
+  .av-wrap,.av{width:78px;height:78px;}
   .pi-grid{grid-template-columns:1fr;}
   .pi-item.full{grid-column:1;}
+  .btn-row{flex-direction:column;}
   #perfMon{font-size:7.5px;padding:5px 8px;bottom:10px;left:10px;}
 }
 @media(min-width:360px) and (max-width:479px){
-  .card{width:330px;padding:26px 18px 22px;}
-  .dname{font-size:19px;}
+  .card{width:332px;padding:26px 18px 22px;}
+  .dname{font-size:23px;}
 }
 @media(min-width:480px) and (max-width:767px){
-  .card{width:400px;padding:28px 22px 24px;}
+  .card{width:400px;padding:30px 24px 24px;}
 }
 @media(max-height:500px) and (orientation:landscape){
   .cw-float{animation:none;}
@@ -665,23 +733,24 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     overflow-y:auto;
   }
   .av-wrap,.av{width:64px;height:64px;}
-  .dname{font-size:17px;margin-bottom:2px;}
+  .dname{font-size:19px;margin-bottom:2px;}
   .eyebrow{margin-bottom:10px;}
 }
 @media(min-width:768px) and (max-width:1023px){
-  .card{width:400px;padding:34px 28px 28px;}
-  .dname{font-size:23px;}
-  .av-wrap,.av{width:96px;height:96px;}
+  .card{width:404px;padding:36px 30px 28px;}
+  .dname{font-size:28px;}
+  .av-wrap,.av{width:102px;height:102px;}
 }
-@media(min-width:1024px){.card{width:384px;}}
-@media(min-width:1440px){.card{width:396px;}}
+@media(min-width:1024px){.card{width:388px;}}
+@media(min-width:1440px){.card{width:400px;}}
 
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  .halo{animation:none;opacity:.7;}
 }
 </style>
 </head>
-<body>
+<body data-status="offline">
 
 <a href="#card" class="skip-link">Skip to content</a>
 
@@ -716,7 +785,8 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 <!-- ════ SCENE ════ -->
 <div class="scene" role="main">
   <div class="cw" id="cw">
-    <!-- 🔧 FIX: extra wrapper so float animation never collides with tilt transform -->
+    <!-- ✨ presence-reactive halo behind the card -->
+    <div class="halo" aria-hidden="true"></div>
     <div class="cw-float">
       <div class="card" id="card" role="article" aria-label="Discord Bio Card" tabindex="0">
         <div class="beam" aria-hidden="true"></div>
@@ -726,26 +796,28 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
           <span id="connTxt">—</span>
         </div>
 
-        <p class="eyebrow" aria-hidden="true">Live Portfolio</p>
+        <div class="eyebrow" aria-hidden="true">
+          <span class="el"></span><span class="et">Live Portfolio</span><span class="er"></span>
+        </div>
 
         <!-- Avatar -->
         <div class="av-wrap">
           <svg class="av-ring" aria-hidden="true" focusable="false" viewBox="0 0 106 106" fill="none">
-            <circle cx="53" cy="53" r="50" stroke="rgba(196,163,90,.05)" stroke-width="1.5"/>
+            <circle cx="53" cy="53" r="50" stroke="rgba(201,169,98,.05)" stroke-width="1.5"/>
             <circle cx="53" cy="53" r="50" stroke="url(#rg)" stroke-width="1.5"
               stroke-dasharray="85 228" stroke-linecap="round"/>
             <defs>
               <linearGradient id="rg" x1="0" y1="0" x2="106" y2="106" gradientUnits="userSpaceOnUse">
-                <stop offset="0%"  stop-color="#c4a35a" stop-opacity="0"/>
-                <stop offset="50%" stop-color="#c4a35a" stop-opacity=".9"/>
-                <stop offset="100%" stop-color="#c4a35a" stop-opacity="0"/>
+                <stop offset="0%"  stop-color="#c9a962" stop-opacity="0"/>
+                <stop offset="50%" stop-color="#ecd9a8" stop-opacity=".9"/>
+                <stop offset="100%" stop-color="#c9a962" stop-opacity="0"/>
               </linearGradient>
             </defs>
           </svg>
           <img class="av" id="avImg"
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%231a1a1a' width='90' height='90' rx='45'/%3E%3C/svg%3E"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='94' height='94'%3E%3Crect fill='%231a1a1a' width='94' height='94' rx='47'/%3E%3C/svg%3E"
             alt="Discord avatar" crossorigin="anonymous"
-            width="88" height="88" decoding="async" loading="eager" fetchpriority="high"
+            width="94" height="94" decoding="async" loading="eager" fetchpriority="high"
             draggable="false" oncontextmenu="return false">
           <div class="sdot" id="sDot" aria-hidden="true"></div>
         </div>
@@ -761,21 +833,38 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
         </div>
 
         <div class="sline" role="status" aria-live="polite">
-          <div class="spip" id="sPip" aria-hidden="true"></div>
-          <span class="sval" id="sVal">Connecting…</span>
+          <span class="spill">
+            <span class="spip" id="sPip" aria-hidden="true"></span>
+            <span class="sval" id="sVal">Connecting…</span>
+          </span>
         </div>
 
         <div class="cstatus" id="cStatus" role="status" aria-live="polite" aria-label="Custom status"></div>
 
-        <a class="dm-btn" id="dmBtn"
-          href="https://discord.com" target="_blank" rel="noopener noreferrer"
-          aria-label="Send a direct message on Discord">
-          <svg class="dm-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.054a19.905 19.905 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-          </svg>
-          <span>Message on Discord</span>
-          <span class="dm-arr" aria-hidden="true">→</span>
-        </a>
+        <!-- Contact — Discord & Email -->
+        <div class="btn-row">
+          <a class="dm-btn" id="dmBtn"
+            href="https://discord.com" target="_blank" rel="noopener noreferrer"
+            aria-label="Send a direct message on Discord">
+            <svg class="dm-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.03.054a19.905 19.905 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+            </svg>
+            <span>Discord</span>
+          </a>
+          <a class="em-btn" id="emBtn"
+            href="mailto:dxm.dev@atomicmail.io"
+            aria-label="Send an email">
+            <svg class="em-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="3"/>
+              <path d="m2.5 6.5 8.13 6.1a2.3 2.3 0 0 0 2.74 0l8.13-6.1"/>
+            </svg>
+            <span>Email</span>
+          </a>
+        </div>
+        <button class="em-note" id="emNote" type="button"
+          aria-label="Copy email address" title="Click to copy">
+          dxm.dev@atomicmail.io<span class="em-wink">· replies not guaranteed</span>
+        </button>
 
         <hr class="div" aria-hidden="true">
 
@@ -786,7 +875,6 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 
         <hr class="div" style="margin-top:18px" aria-hidden="true">
 
-        <!-- 🪶 Simplified personal: 4 items only -->
         <h2 class="slbl" id="pi-lbl">Personal</h2>
         <dl class="pi-grid" aria-labelledby="pi-lbl">
           <div class="pi-item">
@@ -854,6 +942,7 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
     <div class="kb-title">Shortcuts</div>
     <div class="kb-row"><span class="kb-key">C</span><span class="kb-desc">Copy username</span></div>
     <div class="kb-row"><span class="kb-key">D</span><span class="kb-desc">Open Discord profile</span></div>
+    <div class="kb-row"><span class="kb-key">E</span><span class="kb-desc">Copy email address</span></div>
     <div class="kb-row"><span class="kb-key">R</span><span class="kb-desc">Refresh presence</span></div>
     <div class="kb-row"><span class="kb-key">P</span><span class="kb-desc">Toggle perf monitor</span></div>
     <div class="kb-row"><span class="kb-key">I</span><span class="kb-desc">My device (private)</span></div>
@@ -864,10 +953,8 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
 
 <!-- ════ PRIVATE "MY DEVICE" PANEL ════
      Hidden by default. Only YOU can open it (press the I key, or load the
-     page with #me in the URL — e.g. https://ov1x.is-a.dev/#me ). It shows
-     only the viewer's OWN device & connection info, computed entirely in the
-     browser. Nothing here is ever stored or sent anywhere, and your IP is not
-     written into the file — so it can never be shown to any visitor. -->
+     page with #me in the URL). Shows only the viewer's OWN device info,
+     computed entirely in the browser. Nothing is stored or sent anywhere. -->
 <div id="me-overlay" role="dialog" aria-label="My device info" aria-modal="true">
   <div class="kb-panel me-panel">
     <div class="kb-title">My Device <span class="me-lock" title="Private — only on this device">🔒</span></div>
@@ -888,73 +975,54 @@ img{-webkit-user-drag:none;user-drag:none;pointer-events:none;}
   </div>
 </div>
 
-<!-- Background renderer is fully self-contained below (no external CDN,
-     so ad-blockers / content blockers can never strip the animation). -->
-
 <script>
 /* ════════════════════════════════════════════
-   ⚙️  CONFIG — set your Discord user ID here
-   (encoded lightly to slow casual scraping)
+   ⚙️  CONFIG
 ════════════════════════════════════════════ */
 const DISCORD_USER_ID = atob('MTA0NTg2MzY2NjQxMjY4NzM4MA==');
+const CONTACT_EMAIL   = 'dxm.dev' + '@' + 'atomicmail.io'; /* split to slow scrapers */
 
 /* ════════════════════════════════════════════
    🛡️  ANTI-THEFT / DATA PROTECTION
    Note: nothing client-side is *real* security.
-   Anyone determined can still see source. This
-   raises the bar against casual scraping/copying.
 ════════════════════════════════════════════ */
 (function initProtection() {
   const blocked = (msg) => { try { window._Toast && window._Toast.show(msg, 1600, true); } catch(_) {} };
 
-  /* Disable right-click everywhere */
   document.addEventListener('contextmenu', e => {
     e.preventDefault();
     blocked('Right-click disabled');
     return false;
   });
 
-  /* Disable text selection programmatically */
   document.addEventListener('selectstart', e => {
     const t = e.target;
-    /* allow inside buttons / interactive */
     if (t && (t.closest('input,textarea,[contenteditable]'))) return;
     e.preventDefault();
     return false;
   });
 
-  /* Disable image drag */
   document.addEventListener('dragstart', e => { e.preventDefault(); return false; });
 
-  /* Disable copy with notification */
   document.addEventListener('copy', e => {
-    /* allow only if user clicked our copy button (sets a flag) */
     if (window._allowCopy) { window._allowCopy = false; return; }
     e.preventDefault();
     blocked('Copy disabled');
     return false;
   });
 
-  /* Block dev shortcuts */
   document.addEventListener('keydown', e => {
     const k = e.key.toLowerCase();
     const ctrl = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
-    /* F12 */
     if (e.key === 'F12') { e.preventDefault(); blocked('DevTools blocked'); return false; }
-    /* Ctrl+Shift+I / J / C  */
     if (ctrl && shift && (k === 'i' || k === 'j' || k === 'c')) {
       e.preventDefault(); blocked('DevTools blocked'); return false;
     }
-    /* Ctrl+U (view source) */
     if (ctrl && k === 'u') { e.preventDefault(); blocked('View source blocked'); return false; }
-    /* Ctrl+S (save page) */
     if (ctrl && k === 's') { e.preventDefault(); blocked('Save blocked'); return false; }
-    /* Ctrl+A (select all) */
     if (ctrl && k === 'a') { e.preventDefault(); return false; }
-    /* Ctrl+P (print) */
     if (ctrl && k === 'p' && !e.altKey) {
-      /* lowercase p alone is reserved for perf toggle, with ctrl = print */
       e.preventDefault(); blocked('Print blocked'); return false;
     }
   });
@@ -974,13 +1042,11 @@ const DISCORD_USER_ID = atob('MTA0NTg2MzY2NjQxMjY4NzM4MA==');
     }
   }, 1500);
 
-  /* Console warning */
-  const cssBig  = 'color:#c4a35a;font-size:22px;font-family:serif;font-weight:bold;';
-  const cssBody = 'color:#f0ece4;font-size:12px;';
+  const cssBig  = 'color:#c9a962;font-size:22px;font-family:serif;font-weight:bold;';
+  const cssBody = 'color:#f2ede2;font-size:12px;';
   console.log('%cStop!', cssBig);
   console.log('%cThis console is reserved. Anything you paste here can compromise your account.', cssBody);
 
-  /* Anti-iframe (don't allow embedding in untrusted sites) */
   if (window.top !== window.self) {
     try { window.top.location = window.self.location; } catch(_) { document.body.innerHTML = ''; }
   }
@@ -995,11 +1061,8 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
 
 /* ════════════════════════════════════════════
    SELF-CONTAINED BACKGROUND  (no external libs)
-   Lightweight pseudo-3D gold particle field on a
-   2D canvas. Because nothing is loaded from a CDN,
-   no ad-blocker or content-blocker can strip it —
-   the animation always runs. Auto-pauses when the
-   tab is hidden and respects reduced-motion.
+   Pseudo-3D gold particle field. Auto-pauses when
+   the tab is hidden and respects reduced-motion.
 ════════════════════════════════════════════ */
 (function initBG() {
   const canvas = $('bg');
@@ -1012,7 +1075,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
   let dpr = Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2);
   let W = 0, H = 0, cx = 0, cy = 0;
 
-  /* particle field — each has a 3D-ish depth (z) for parallax */
   const N = reduced ? 90 : (mobile ? 220 : 460);
   const FOCAL = 430;
   let parts = [];
@@ -1024,6 +1086,8 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
         x: (Math.random() - .5) * 1900,
         y: (Math.random() - .5) * 1900,
         z: Math.random() * 1900 + 1,
+        /* subtle two-tone field: most gold, a few champagne sparks */
+        c: Math.random() < .12 ? '#ecd9a8' : '#c9a962',
       };
     }
   }
@@ -1041,7 +1105,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
   seed();
   window.addEventListener('resize', resize, { passive: true });
 
-  /* pointer parallax (desktop only) */
   let mx = 0, my = 0;
   if (!mobile && !reduced) {
     window.addEventListener('mousemove', e => {
@@ -1059,17 +1122,15 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
     const cosY = Math.cos(rot + mx * 0.035);
     const tiltX = my * 0.05;
 
-    ctx.fillStyle = '#060606';
+    ctx.fillStyle = '#040404';
     ctx.fillRect(0, 0, W, H);
 
     for (let i = 0; i < N; i++) {
       const p = parts[i];
-      /* rotate around Y, then a touch around X for life */
       const x =  p.x * cosY - p.z * sinY;
       let   z =  p.x * sinY + p.z * cosY;
       const y =  p.y + z * tiltX;
 
-      /* drift particles toward the viewer, recycle when too close */
       z -= 0.6;
       p.z = z <= 1 ? 1900 : z;
 
@@ -1082,7 +1143,7 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
       const size = Math.max(0.4, scale * 2.1);
       const alpha = Math.min(0.22, scale * 0.42);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#c4a35a';
+      ctx.fillStyle = p.c;
       ctx.beginPath();
       ctx.arc(sx, sy, size, 0, 6.2832);
       ctx.fill();
@@ -1094,7 +1155,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
   function stop()  { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
 
   if (reduced) {
-    /* draw a single static frame, no loop */
     rot = 0; frame(); stop();
   } else {
     start();
@@ -1104,30 +1164,21 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
     if (document.hidden) stop(); else if (!reduced) start();
   });
 
-  /* expose for the resilience watchdog */
   window._bgAlive = () => running || reduced;
   window._bgRestart = () => { if (!reduced) { stop(); seed(); start(); } };
 })();
 
 /* ════════════════════════════════════════════
    🛡️ AD-BLOCK / CONTENT-BLOCKER RESILIENCE
-   The page already loads ZERO ad/tracker scripts
-   and renders every animation inline, so blockers
-   have nothing legitimate to remove. This watchdog
-   is a safety net: it detects when a blocker's
-   cosmetic filtering is active and re-asserts that
-   our own animations (stickman + canvas field) are
-   alive, self-healing if anything was touched.
+   Everything renders inline; this watchdog just
+   self-heals if a cosmetic filter touches things.
 ════════════════════════════════════════════ */
 (function initBlockerResilience() {
   let notified = false;
 
-  /* Re-assert that our inline animations are running. */
   function heal() {
-    /* 1) Canvas background — restart if a frame loop died. */
     try { if (window._bgAlive && !window._bgAlive()) window._bgRestart?.(); } catch (_) {}
 
-    /* 2) Stickman — guarantee its animation classes survive. */
     const svg = $('smSvg');
     if (svg && !_loadingDone) {
       svg.style.animationPlayState = 'running';
@@ -1136,14 +1187,10 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
       });
     }
 
-    /* 3) Perf monitor sometimes matches generic "widget" hide rules —
-          make sure it is not force-hidden by a cosmetic filter. */
     const pm = $('perfMon');
     if (pm && getComputedStyle(pm).display === 'none') pm.style.display = 'flex';
   }
 
-  /* Bait element: blockers with cosmetic filtering hide ad-named nodes.
-     We use it ONLY to detect a blocker, never to nag aggressively. */
   function detect() {
     const bait = document.createElement('div');
     bait.className = 'ad-banner ads adsbox ad-placement pub_300x250 sponsor';
@@ -1162,13 +1209,11 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
 
       if (blocked && !notified) {
         notified = true;
-        /* Friendly, one-time, non-blocking note. Everything still works. */
         try { window._Toast?.show('Blocker detected · animations run locally', 2200); } catch (_) {}
       }
     });
   }
 
-  /* Run once shortly after load, then keep a light self-healing pulse. */
   function boot() {
     setTimeout(detect, 1200);
     setInterval(heal, 4000);
@@ -1179,10 +1224,8 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
 
 /* ════════════════════════════════════════════
    🔧 TILT — desktop mouse + mobile gyro
-   FIXED: tilt sets transform ONLY on .card.
-   Float animation now lives on its own
-   .cw-float wrapper, so they never fight.
-   Also uses requestAnimationFrame for smoothness.
+   Tilt sets transform ONLY on .card; float lives
+   on .cw-float, so they never fight.
 ════════════════════════════════════════════ */
 (function initTilt() {
   const card = $('card');
@@ -1204,7 +1247,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
   function kick() { if (!rafId) rafId = requestAnimationFrame(loop); }
 
   if (!isMobile()) {
-    /* Desktop: mouse parallax */
     scene.addEventListener('mousemove', e => {
       const r = card.getBoundingClientRect();
       const dx = ((e.clientX - r.left) / r.width  - .5) * 2;
@@ -1217,7 +1259,6 @@ const isReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion:reduc
       targetX = 0; targetY = 0; kick();
     }, { passive: true });
   } else {
-    /* Mobile: gyro */
     let baseB = null, baseG = null;
     window.addEventListener('deviceorientation', e => {
       if (baseB === null) { baseB = e.beta; baseG = e.gamma; return; }
@@ -1272,14 +1313,12 @@ window._Toast = Toast;
   const elNet  = $('pmNet');
   const elNetW = $('pmNetWrap');
 
-  /* Load time from Navigation Timing */
   function readLoadTime() {
     try {
       const nav = performance.getEntriesByType('navigation')[0];
       if (nav) {
         const ms = Math.round(nav.domContentLoadedEventEnd || nav.duration || 0);
         elLoad.textContent = (ms / 1000).toFixed(2) + 's';
-        /* grade */
         const grade = ms < 1500 ? 'a' : ms < 3500 ? 'b' : 'c';
         el.dataset.grade = grade;
         return;
@@ -1290,7 +1329,6 @@ window._Toast = Toast;
   if (document.readyState === 'complete') readLoadTime();
   else window.addEventListener('load', () => setTimeout(readLoadTime, 100));
 
-  /* FPS counter */
   let frames = 0, lastTime = performance.now(), fps = 0;
   function fpsLoop(now) {
     frames++;
@@ -1304,7 +1342,6 @@ window._Toast = Toast;
   }
   requestAnimationFrame(fpsLoop);
 
-  /* Network info */
   function readNet() {
     const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (c) {
@@ -1318,10 +1355,8 @@ window._Toast = Toast;
   }
   readNet();
 
-  /* Show after load */
   setTimeout(() => el.classList.add('show'), 600);
 
-  /* Click to toggle collapse */
   let collapsed = false;
   el.addEventListener('click', () => {
     collapsed = !collapsed;
@@ -1359,15 +1394,9 @@ window._Toast = Toast;
 
 /* ════════════════════════════════════════════
    🔒 PRIVATE "MY DEVICE" PANEL
-   Shows ONLY the current viewer their OWN device &
-   connection details. Everything is computed in the
-   browser; the public IP/location lookup goes
-   straight from the viewer's browser to ipwho.is and
-   is shown only to them. NOTHING is stored or sent to
-   the site owner or any third party, and no IP is
-   written into the file — so a visitor can never see
-   anyone else's IP. Opens with the "I" key or by
-   loading the page with #me in the URL.
+   Shows ONLY the current viewer their OWN device
+   details, computed in the browser. Nothing is
+   stored or sent to the site owner.
 ════════════════════════════════════════════ */
 (function initMyDevice() {
   const overlay = $('me-overlay');
@@ -1375,12 +1404,10 @@ window._Toast = Toast;
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v || '—'; };
   let geoLoaded = false, myIp = '';
 
-  /* ---- static device facts (instant, offline) ---- */
   function readDevice() {
     const ua = navigator.userAgent;
     const uad = navigator.userAgentData;
 
-    /* OS */
     let os = 'Unknown';
     if (uad?.platform) os = uad.platform;
     else if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
@@ -1390,7 +1417,6 @@ window._Toast = Toast;
     else if (/Mac OS X/.test(ua)) os = 'macOS';
     else if (/Linux/.test(ua)) os = 'Linux';
 
-    /* Browser */
     let brow = 'Unknown';
     if (/Edg\//.test(ua)) brow = 'Edge';
     else if (/OPR\/|Opera/.test(ua)) brow = 'Opera';
@@ -1398,7 +1424,6 @@ window._Toast = Toast;
     else if (/Firefox\//.test(ua)) brow = 'Firefox';
     else if (/Safari\//.test(ua)) brow = 'Safari';
 
-    /* Device type */
     const dev = uad?.mobile ? 'Mobile' :
                 /iPad|Tablet/.test(ua) ? 'Tablet' :
                 /Mobi|Android/.test(ua) ? 'Mobile' : 'Desktop';
@@ -1419,7 +1444,6 @@ window._Toast = Toast;
     } else set('meNet', navigator.onLine ? 'Online' : 'Offline');
   }
 
-  /* ---- public IP + location (only fetched once, when first opened) ---- */
   function loadGeo() {
     if (geoLoaded) return;
     geoLoaded = true;
@@ -1450,7 +1474,6 @@ window._Toast = Toast;
       .catch(() => { geoLoaded = false; fail(); });
   }
 
-  /* ---- open / close ---- */
   function open() {
     readDevice();
     loadGeo();
@@ -1468,12 +1491,9 @@ window._Toast = Toast;
       .catch(() => Toast.show('Copy failed', 2000, true));
   });
 
-  /* expose so the keyboard handler can toggle it */
   window._toggleMyDevice = () => overlay.classList.contains('show') ? close() : open();
   window._closeMyDevice = close;
 
-  /* Private mode: only when loaded with #me, reveal a tappable button
-     (great for mobile, which has no keyboard) and auto-open once. */
   const btn = $('meBtn');
   if (location.hash.toLowerCase() === '#me') {
     if (btn) btn.classList.add('show');
@@ -1485,26 +1505,36 @@ window._Toast = Toast;
 /* ════════════════════════════════════════════
    COPY TO CLIPBOARD (allowed via flag)
 ════════════════════════════════════════════ */
-function copyUsername() {
-  const handle = $('uHandle').textContent;
-  if (!handle || handle === '@discord') return;
+function copyText(text, label) {
   window._allowCopy = true;
-  navigator.clipboard?.writeText(handle).then(() => {
-    Toast.show(`Copied ${handle}`);
+  navigator.clipboard?.writeText(text).then(() => {
+    Toast.show(`Copied ${label}`);
   }).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = handle;
+    ta.value = text;
     ta.style.cssText = 'position:fixed;opacity:0;';
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     ta.remove();
-    Toast.show(`Copied ${handle}`);
+    Toast.show(`Copied ${label}`);
   });
+}
+
+function copyUsername() {
+  const handle = $('uHandle').textContent;
+  if (!handle || handle === '@discord') return;
+  copyText(handle, handle);
+}
+
+function copyEmail() {
+  copyText(CONTACT_EMAIL, 'email · no promises 😄');
 }
 
 $('copyBtn').addEventListener('click', copyUsername);
 $('uHandle').addEventListener('click', copyUsername);
+$('emNote').addEventListener('click', copyEmail);
+$('emBtn').href = 'mailto:' + CONTACT_EMAIL;
 
 /* ════════════════════════════════════════════
    CONNECTION BADGE
@@ -1528,10 +1558,12 @@ function setStatus(st) {
   if (st !== 'offline') { dot.classList.add(st); pip.classList.add(st); }
   const lbl = { online:'Online', idle:'Away', dnd:'Do Not Disturb', offline:'Offline' };
   val.textContent = lbl[st] || 'Offline';
-  val.style.color = st==='online' ? 'rgba(59,165,92,.75)'
-                  : st==='idle'   ? 'rgba(250,166,26,.75)'
-                  : st==='dnd'    ? 'rgba(237,66,69,.75)'
+  val.style.color = st==='online' ? 'rgba(59,165,92,.8)'
+                  : st==='idle'   ? 'rgba(250,166,26,.8)'
+                  : st==='dnd'    ? 'rgba(237,66,69,.8)'
                   : '';
+  /* ✨ tint the presence halo behind the card */
+  document.body.dataset.status = ['online','idle','dnd'].includes(st) ? st : 'offline';
 }
 
 function setCustomStatus(data) {
@@ -1753,7 +1785,6 @@ setTimeout(hideLoading, 5000);
   });
 
   document.addEventListener('keydown', e => {
-    /* Close the private device panel first if it is open */
     const meOv = $('me-overlay');
     if (meOv && meOv.classList.contains('show')) {
       if (e.key === 'Escape') window._closeMyDevice?.();
@@ -1763,14 +1794,13 @@ setTimeout(hideLoading, 5000);
       if (e.key === 'Escape') overlay.classList.remove('show');
       return;
     }
-    /* Ignore if user is typing in an input */
     if (e.target.closest('input,textarea,[contenteditable]')) return;
-    /* Ignore if Ctrl/Meta held (those are reserved by anti-theft) */
     if (e.ctrlKey || e.metaKey) return;
 
     switch (e.key.toLowerCase()) {
       case 'c': copyUsername(); break;
       case 'd': { const url = $('dmBtn').href; if (url !== 'https://discord.com') window.open(url, '_blank'); break; }
+      case 'e': copyEmail(); break;
       case 'r': window._lanyardRefresh?.(); break;
       case 'p': $('perfMon').click(); break;
       case 'i': window._toggleMyDevice?.(); break;
@@ -1780,11 +1810,9 @@ setTimeout(hideLoading, 5000);
 })();
 </script>
 
-<!-- ════ Cloudflare Web Analytics (privacy-friendly · no cookies · no per-visitor IP exposed) ════
+<!-- ════ Cloudflare Web Analytics (privacy-friendly · no cookies) ════
      SETUP: dash.cloudflare.com → Analytics & Logs → Web Analytics → Add a site
-     (ov1x.is-a.dev) → copy the token, then replace PASTE_YOUR_CLOUDFLARE_TOKEN_HERE below.
-     Note: this is the ONLY external script on the page; an ad-blocker may block it, which
-     only affects stats — every animation still runs because they are all inline. -->
+     (ov1x.is-a.dev) → copy the token, then replace PASTE_YOUR_CLOUDFLARE_TOKEN_HERE below. -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
   data-cf-beacon='{"token": "PASTE_YOUR_CLOUDFLARE_TOKEN_HERE"}'></script>
 
