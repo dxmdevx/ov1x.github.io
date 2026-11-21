@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>ESX → TRASH</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  height:100%;
+  background:#060607;
+  color:#ededf0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+}
+body{display:flex;align-items:center;justify-content:center}
+
+/* ---------- shell ---------- */
+.app{
+  position:relative;
+  width:100%;
+  max-width:430px;
+  height:100%;
+  max-height:920px;
+  display:flex;
+  flex-direction:column;
+  background:#0a0a0b;
+  border-left:1px solid #141417;
+  border-right:1px solid #141417;
+  overflow:hidden;
+}
+.app::after{
+  content:'';
+  position:absolute;inset:0;
+  background:#e04a35;
+  opacity:0;
+  pointer-events:none;
+  z-index:95;
+  transition:opacity .3s;
+}
+.app.flash::after{opacity:.06;transition:none}
+
+/* ---------- header ---------- */
+header{
+  flex:none;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding:16px 18px 14px;
+  border-bottom:1px solid #17171a;
+}
+.brand{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.24em;
+  color:#5c5c64;
+  padding-top:5px;
+}
+.brand span{color:#e04a35;margin:0 3px}
+
+.hud{text-align:right;line-height:1}
+.score{
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:.05em;
+  font-variant-numeric:tabular-nums;
+}
+.sub{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:7px;
+  font-size:10px;
+  letter-spacing:.14em;
+  color:#5c5c64;
+}
+#combo{transition:color .15s}
+#combo.hot{color:#e04a35}
+.lives{display:flex;gap:3px}
+.lives i{width:8px;height:8px;background:#ededf0;transition:background .2s}
+.lives i.off{background:#232329}
+
+/* ---------- stage ---------- */
+#stage{
+  position:relative;
+  flex:1;
+  overflow:hidden;
+  touch-action:none;
+}
+
+/* ---------- dock + bin ---------- */
+#dock{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:130px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding-bottom:24px;
+  border-top:1px solid #17171a;
+  pointer-events:none;
+}
+.bin{width:132px;transition:transform .12s}
+.bin.over{transform:translateY(-2px)}
+.bin .lid{
+  height:11px;
+  background:#141417;
+  border:1px solid #2a2a30;
+  border-bottom:none;
+  margin:0 -5px;
+  transform-origin:6% 50%;
+  transition:transform .2s cubic-bezier(.3,.9,.4,1.3);
+}
+.bin.open .lid{transform:rotate(-24deg)}
+.bin .body{
+  height:72px;
+  background:#0f0f11;
+  border:1px solid #2a2a30;
+  border-top:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.34em;
+  text-indent:.34em;
+  color:#2b2b31;
+  transition:color .18s,border-color .18s,background .18s;
+}
+.bin.over .body,
+.bin.hit .body{
+  border-color:#e04a35;
+  background:#120d0c;
+  color:#e04a35;
+}
+
+/* ---------- tags ---------- */
+.tag{
+  position:absolute;
+  top:0;left:0;
+  padding:12px 16px 12px 18px;
+  line-height:1;
+  background:#131316;
+  border:1px solid #2a2a30;
+  border-top:2px solid #e04a35;
+  color:#ededf0;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.28em;
+  white-space:nowrap;
+  cursor:grab;
+  touch-action:none;
+  will-change:transform;
+  transition:background .12s,border-color .12s;
+}
+.tag.drag{
+  cursor:grabbing;
+  background:#1c1c20;
+  border-color:#3a3a42;
+  border-top-color:#e04a35;
+  z-index:50;
+  transition:none;
+}
+
+/* ---------- float ---------- */
+.pop{
+  position:absolute;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.08em;
+  pointer-events:none;
+  z-index:60;
+  animation:popUp .7s ease-out forwards;
+}
+@keyframes popUp{
+  0%{opacity:0;transform:translateY(0)}
+  20%{opacity:1;transform:translateY(-8px)}
+  100%{opacity:0;transform:translateY(-38px)}
+}
+
+/* ---------- overlay ---------- */
+.overlay{
+  position:absolute;
+  inset:0;
+  z-index:100;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:32px;
+  background:#0a0a0b;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .22s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.ov-head{
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.3em;
+  color:#5c5c64;
+  margin-bottom:18px;
+}
+.ov-title{
+  font-size:26px;
+  font-weight:600;
+  letter-spacing:.1em;
+  color:#ededf0;
+  margin-bottom:20px;
+}
+.ov-title .ar{color:#e04a35;margin:0 6px}
+.ov-big{
+  font-size:64px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+  margin-bottom:12px;
+}
+.ov-sub{
+  font-size:12px;
+  line-height:1.9;
+  letter-spacing:.03em;
+  color:#5c5c64;
+  font-family:-apple-system,"Segoe UI","Noto Sans Thai",sans-serif;
+}
+.btn{
+  margin-top:30px;
+  padding:14px 30px;
+  background:#ededf0;
+  color:#0a0a0b;
+  border:none;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.28em;
+  text-indent:.28em;
+  cursor:pointer;
+  transition:background .15s,transform .1s;
+}
+.btn:hover{background:#fff}
+.btn:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header>
+    <div class="brand">ESX<span>→</span>TRASH</div>
+    <div class="hud">
+      <div class="score" id="score">000</div>
+      <div class="sub">
+        <span id="combo">×1</span>
+        <span class="lives" id="lives"><i></i><i></i><i></i></span>
+      </div>
+    </div>
+  </header>
+
+  <div id="stage">
+    <div id="dock">
+      <div class="bin" id="bin">
+        <div class="lid"></div>
+        <div class="body">TRASH</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+</div>
+
+<script>
+(() => {
+  const app     = document.getElementById('app');
+  const stage   = document.getElementById('stage');
+  const dock    = document.getElementById('dock');
+  const bin     = document.getElementById('bin');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const livesEl = document.getElementById('lives');
+  const overlay = document.getElementById('overlay');
+
+  const MAX_LIVES = 3;
+  const LABEL = 'ESX';
+
+  const S = {
+    score: 0, combo: 0, lives: MAX_LIVES, level: 1,
+    running: false, tags: [], spawnT: 0, lastT: 0
+  };
+
+  let LIMIT = 400;
+  let actx = null;
+  let lidTimer = null;
+
+  /* ---------- audio ---------- */
+  function audio(){
+    if(!actx){
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ actx = null; }
+    }
+    return actx;
+  }
+  function sfx(freq, dur, type, vol){
+    const a = audio(); if(!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, a.currentTime);
+    g.gain.setValueAtTime(vol || .05, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(); o.stop(a.currentTime + dur);
+  }
+
+  /* ---------- hud ---------- */
+  const mult = () => 1 + Math.min(Math.floor(S.combo / 3), 4);
+
+  function drawHud(){
+    scoreEl.textContent = String(S.score).padStart(3, '0');
+    comboEl.textContent = '×' + mult();
+    comboEl.classList.toggle('hot', S.combo >= 3);
+    livesEl.innerHTML = '';
+    for(let i = 0; i < MAX_LIVES; i++){
+      const d = document.createElement('i');
+      if(i >= S.lives) d.className = 'off';
+      livesEl.appendChild(d);
+    }
+  }
+
+  /* ---------- measure ---------- */
+  function measure(){ LIMIT = dock.offsetTop - 20; }
+  window.addEventListener('resize', measure);
+
+  /* ---------- spawn ---------- */
+  function spawn(){
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.textContent = LABEL;
+
+    const w = stage.clientWidth;
+    const x = 14 + Math.random() * Math.max(0, w - 100);
+
+    const t = {
+      el, x, y: -50,
+      vy: 80 + S.level * 10,
+      rot: Math.random() * 10 - 5,
+      dragging: false, dead: false,
+      ox: 0, oy: 0
+    };
+    el.style.transform = `translate(${x}px,${t.y}px) rotate(${t.rot}deg)`;
+    stage.appendChild(el);
+    S.tags.push(t);
+    bind(t);
+  }
+
+  /* ---------- drag ---------- */
+  function bind(t){
+    const el = t.el;
+
+    el.addEventListener('pointerdown', e => {
+      if(!S.running || t.dead) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      t.dragging = true;
+      el.classList.add('drag');
+      const r = stage.getBoundingClientRect();
+      t.ox = e.clientX - r.left - t.x;
+      t.oy = e.clientY - r.top  - t.y;
+    });
+
+    el.addEventListener('pointermove', e => {
+      if(!t.dragging) return;
+      const r = stage.getBoundingClientRect();
+      t.x = e.clientX - r.left - t.ox;
+      t.y = e.clientY - r.top  - t.oy;
+      el.style.transform = `translate(${t.x}px,${t.y}px) rotate(0deg)`;
+      bin.classList.toggle('over', onBin(e.clientX, e.clientY));
+    });
+
+    const release = e => {
+      if(!t.dragging) return;
+      t.dragging = false;
+      el.classList.remove('drag');
+      bin.classList.remove('over');
+      if(t.dead) return;
+
+      if(onBin(e.clientX, e.clientY)){
+        collect(t);
+      } else {
+        if(t.y > LIMIT - 60) t.y = LIMIT - 60;
+        const maxX = stage.clientWidth - el.offsetWidth - 4;
+        t.x = Math.max(4, Math.min(t.x, maxX));
+        el.style.transform = `translate(${t.x}px,${t.y}px) rotate(${t.rot}deg)`;
+      }
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+  }
+
+  function onBin(cx, cy){
+    const r = bin.getBoundingClientRect();
+    const p = 12;
+    return cx >= r.left - p && cx <= r.right + p &&
+           cy >= r.top  - p && cy <= r.bottom + p;
+  }
+
+  /* ---------- actions ---------- */
+  function collect(t){
+    t.dead = true;
+    S.combo++;
+    const pts = 10 * mult();
+    S.score += pts;
+    S.level = 1 + Math.floor(S.score / 120);
+
+    const fr = stage.getBoundingClientRect();
+    const br = bin.getBoundingClientRect();
+    const dx = br.left - fr.left + br.width / 2 - 30;
+    const dy = br.top  - fr.top  + 6;
+
+    t.el.animate([
+      { transform: `translate(${t.x}px,${t.y}px) rotate(0deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) rotate(16deg) scale(.35)`, opacity: 0 }
+    ], { duration: 210, easing: 'cubic-bezier(.4,0,.75,1)', fill: 'forwards' })
+      .onfinish = () => t.el.remove();
+
+    pop(t.x + 22, t.y, '+' + pts, '#7bd88f');
+
+    bin.classList.add('hit');
+    setTimeout(() => bin.classList.remove('hit'), 260);
+
+    bin.classList.add('open');
+    clearTimeout(lidTimer);
+    lidTimer = setTimeout(() => bin.classList.remove('open'), 240);
+
+    sfx(720 + mult() * 80, .06, 'square', .04);
+    drawHud();
+  }
+
+  function miss(t){
+    t.dead = true;
+    S.combo = 0;
+    S.lives--;
+    drawHud();
+
+    t.el.animate([
+      { transform: `translate(${t.x}px,${t.y}px) rotate(${t.rot}deg)`, opacity: 1 },
+      { transform: `translate(${t.x}px,${t.y + 26}px) rotate(${t.rot}deg)`, opacity: 0 }
+    ], { duration: 240, fill: 'forwards' }).onfinish = () => t.el.remove();
+
+    app.classList.add('flash');
+    setTimeout(() => app.classList.remove('flash'), 220);
+
+    sfx(120, .14, 'sawtooth', .05);
+
+    if(S.lives <= 0) stop();
+  }
+
+  function pop(x, y, text, color){
+    const el = document.createElement('div');
+    el.className = 'pop';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    stage.appendChild(el);
+    setTimeout(() => el.remove(), 720);
+  }
+
+  /* ---------- loop ---------- */
+  function tick(t){
+    if(!S.running) return;
+    const dt = Math.min((t - S.lastT) / 1000, .05);
+    S.lastT = t;
+
+    S.spawnT -= dt;
+    if(S.spawnT <= 0){
+      spawn();
+      S.spawnT = Math.max(.5, 1.3 - S.level * .07);
+    }
+
+    for(const tg of S.tags.slice()){
+      if(tg.dead || tg.dragging) continue;
+      tg.y += tg.vy * dt;
+      if(tg.y > LIMIT){ miss(tg); continue; }
+      tg.el.style.transform = `translate(${tg.x}px,${tg.y}px) rotate(${tg.rot}deg)`;
+    }
+    S.tags = S.tags.filter(t => !t.dead);
+
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- flow ---------- */
+  function reset(){
+    S.score = 0; S.combo = 0; S.lives = MAX_LIVES; S.level = 1;
+    S.spawnT = .9; S.running = false;
+    S.tags.forEach(t => t.el.remove());
+    S.tags = [];
+    drawHud();
+    measure();
+  }
+
+  function start(){
+    audio();
+    reset();
+    overlay.classList.remove('show');
+    S.running = true;
+    S.lastT = performance.now();
+    requestAnimationFrame(tick);
+  }
+
+  function stop(){
+    S.running = false;
+    showEnd();
+  }
+
+  function showStart(){
+    overlay.innerHTML = `
+      <div class="ov-head">DRAG TO DISCARD</div>
+      <div class="ov-title">ESX<span class="ar">→</span>TRASH</div>
+      <p class="ov-sub">ลากแท็ก ESX ลงถัง<br>อย่าให้ตกถึงพื้น · มี 3 ชีวิต</p>
+      <button class="btn" id="btnGo">START</button>
+    `;
+    overlay.classList.add('show');
+    document.getElementById('btnGo').onclick = start;
+  }
+
+  function showEnd(){
+    overlay.innerHTML = `
+      <div class="ov-head">GAME OVER</div>
+      <div class="ov-big">${S.score}</div>
+      <p class="ov-sub">แต้มที่เก็บได้</p>
+      <button class="btn" id="btnAgain">RETRY</button>
+    `;
+    overlay.classList.add('show');
+    document.getElementById('btnAgain').onclick = start;
+  }
+
+  /* ---------- init ---------- */
+  drawHud();
+  setTimeout(measure, 0);
+  showStart();
+})();
+</script>
+</body>
+</html>
